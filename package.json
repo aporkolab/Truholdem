@@ -1,0 +1,55 @@
+{
+  "name": "truholdem",
+  "version": "2.0.0",
+  "private": true,
+  "description": "TruHoldem - Production-Ready Texas Hold'em Poker Platform",
+  "author": "Adam Porkolab",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aporkolab/TruHoldem.git"
+  },
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "prepare": "husky || true",
+    "preinstall": "npx only-allow npm",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd backend && ./mvnw clean package -DskipTests",
+    "build:frontend": "cd frontend && npm run build",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && ./mvnw test",
+    "test:frontend": "cd frontend && npm run test:ci",
+    "lint": "npm run lint:frontend",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:fix": "cd frontend && npm run lint:fix",
+    "e2e": "cd frontend && npm run e2e:headless",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "docker:build": "docker compose build",
+    "clean": "npm run clean:backend && npm run clean:frontend",
+    "clean:backend": "cd backend && ./mvnw clean",
+    "clean:frontend": "cd frontend && rm -rf dist node_modules/.cache",
+    "release": "./scripts/release.sh",
+    "release:patch": "./scripts/release.sh patch",
+    "release:minor": "./scripts/release.sh minor",
+    "release:major": "./scripts/release.sh major",
+    "commitlint": "commitlint --edit"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.1",
+    "@commitlint/config-conventional": "^19.6.0",
+    "concurrently": "^9.1.0",
+    "husky": "^9.1.7"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "packageManager": "npm@10.9.0"
+}
