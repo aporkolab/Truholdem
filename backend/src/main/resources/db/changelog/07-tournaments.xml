@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    
+
+    
+    <changeSet id="07-tournaments-001" author="truholdem">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="tournaments"/>
+        </preConditions>
+        
+        
+        <addColumn tableName="tournaments">
+            <column name="version" type="BIGINT" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rebuy_amount" type="INT" defaultValue="0"/>
+            <column name="rebuy_deadline_level" type="INT" defaultValue="0"/>
+            <column name="max_rebuys" type="INT" defaultValue="0"/>
+            <column name="add_on_amount" type="INT" defaultValue="0"/>
+            <column name="bounty_amount" type="INT" defaultValue="0"/>
+            <column name="level_start_time" type="TIMESTAMP"/>
+            <column name="level_duration_minutes" type="INT" defaultValue="15"/>
+        </addColumn>
+        
+        
+        <renameColumn tableName="tournaments" 
+                      oldColumnName="started_at" 
+                      newColumnName="start_time"
+                      columnDataType="TIMESTAMP"/>
+        <renameColumn tableName="tournaments" 
+                      oldColumnName="ended_at" 
+                      newColumnName="end_time"
+                      columnDataType="TIMESTAMP"/>
+    </changeSet>
+
+    
+    <changeSet id="07-tournaments-002" author="truholdem">
+        <createTable tableName="tournament_tables">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tournament_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="current_game_id" type="UUID"/>
+            <column name="table_number" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_final_table" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_active" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="closed_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint 
+            baseTableName="tournament_tables"
+            baseColumnNames="tournament_id"
+            constraintName="fk_tournament_table_tournament"
+            referencedTableName="tournaments"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint 
+            baseTableName="tournament_tables"
+            baseColumnNames="current_game_id"
+            constraintName="fk_tournament_table_game"
+            referencedTableName="poker_games"
+            referencedColumnNames="id"
+            onDelete="SET NULL"/>
+
+        <createIndex tableName="tournament_tables" indexName="idx_tournament_table_tournament">
+            <column name="tournament_id"/>
+        </createIndex>
+        <createIndex tableName="tournament_tables" indexName="idx_tournament_table_number">
+            <column name="table_number"/>
+        </createIndex>
+    </changeSet>
+
+    
+    <changeSet id="07-tournaments-003" author="truholdem">
+        <createTable tableName="tournament_table_players">
+            <column name="table_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="player_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="seat_position" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint 
+            baseTableName="tournament_table_players"
+            baseColumnNames="table_id"
+            constraintName="fk_table_players_table"
+            referencedTableName="tournament_tables"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <addPrimaryKey 
+            tableName="tournament_table_players"
+            columnNames="table_id, seat_position"
+            constraintName="pk_tournament_table_players"/>
+    </changeSet>
+
+    
+    <changeSet id="07-tournaments-004" author="truholdem">
+        <createTable tableName="tournament_blind_levels">
+            <column name="tournament_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="level_order" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="level" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="small_blind" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="big_blind" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ante" type="INT" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint 
+            baseTableName="tournament_blind_levels"
+            baseColumnNames="tournament_id"
+            constraintName="fk_blind_levels_tournament"
+            referencedTableName="tournaments"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <addPrimaryKey 
+            tableName="tournament_blind_levels"
+            columnNames="tournament_id, level_order"
+            constraintName="pk_tournament_blind_levels"/>
+    </changeSet>
+
+    
+    <changeSet id="07-tournaments-005" author="truholdem">
+        <createTable tableName="tournament_payout_structure">
+            <column name="tournament_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="position_order" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="percentage" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint 
+            baseTableName="tournament_payout_structure"
+            baseColumnNames="tournament_id"
+            constraintName="fk_payout_structure_tournament"
+            referencedTableName="tournaments"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <addPrimaryKey 
+            tableName="tournament_payout_structure"
+            columnNames="tournament_id, position_order"
+            constraintName="pk_tournament_payout_structure"/>
+    </changeSet>
+
+    
+    <changeSet id="07-tournaments-006" author="truholdem">
+        <addColumn tableName="tournament_registrations">
+            <column name="version" type="BIGINT" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="player_id" type="UUID"/>
+            <column name="current_chips" type="INT" defaultValue="0"/>
+            <column name="status" type="VARCHAR(32)" defaultValue="REGISTERED"/>
+            <column name="rebuys_used" type="INT" defaultValue="0"/>
+            <column name="add_ons_used" type="INT" defaultValue="0"/>
+            <column name="bounties_collected" type="INT" defaultValue="0"/>
+            <column name="bounty_value" type="INT" defaultValue="0"/>
+            <column name="started_playing_at" type="TIMESTAMP"/>
+        </addColumn>
+
+        
+        <sql>
+            UPDATE tournament_registrations 
+            SET current_chips = chips,
+                player_id = user_id,
+                status = CASE 
+                    WHEN is_eliminated = true THEN 'ELIMINATED'
+                    WHEN finish_position IS NOT NULL THEN 'FINISHED'
+                    ELSE 'REGISTERED'
+                END
+            WHERE current_chips IS NULL OR current_chips = 0
+        </sql>
+
+        
+        <createIndex tableName="tournament_registrations" indexName="idx_reg_player">
+            <column name="player_id"/>
+        </createIndex>
+        <createIndex tableName="tournament_registrations" indexName="idx_reg_status">
+            <column name="status"/>
+        </createIndex>
+        <createIndex tableName="tournament_registrations" indexName="idx_reg_position">
+            <column name="finish_position"/>
+        </createIndex>
+    </changeSet>
+
+    
+    <changeSet id="07-tournaments-007" author="truholdem" context="cleanup">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="tournament_registrations" columnName="chips"/>
+        </preConditions>
+        
+        <dropColumn tableName="tournament_registrations" columnName="chips"/>
+        <dropColumn tableName="tournament_registrations" columnName="user_id"/>
+        <dropColumn tableName="tournament_registrations" columnName="is_eliminated"/>
+        
+        
+        <dropColumn tableName="tournaments" columnName="small_blind"/>
+        <dropColumn tableName="tournaments" columnName="big_blind"/>
+        <dropColumn tableName="tournaments" columnName="blind_increase_minutes"/>
+        <dropColumn tableName="tournaments" columnName="prize_pool"/>
+        <dropColumn tableName="tournaments" columnName="active_game_id"/>
+    </changeSet>
+
+    
+    <changeSet id="07-tournaments-008" author="truholdem">
+        <createIndex tableName="tournaments" indexName="idx_tournament_type">
+            <column name="tournament_type"/>
+        </createIndex>
+        <createIndex tableName="tournaments" indexName="idx_tournament_start">
+            <column name="start_time"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

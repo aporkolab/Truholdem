@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Add OAuth support columns to users table -->
+    <changeSet id="oauth-support-1" author="truholdem">
+        <comment>Add OAuth provider support columns to users table</comment>
+
+        <addColumn tableName="users">
+            <column name="oauth_provider" type="VARCHAR(20)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="users">
+            <column name="oauth_id" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!-- Make password nullable for OAuth users -->
+    <changeSet id="oauth-support-2" author="truholdem">
+        <comment>Make password_hash nullable to support OAuth-only users</comment>
+
+        <dropNotNullConstraint tableName="users" columnName="password_hash" columnDataType="VARCHAR(255)"/>
+    </changeSet>
+
+    <!-- Create unique index for OAuth provider + ID -->
+    <changeSet id="oauth-support-3" author="truholdem">
+        <comment>Create unique index for OAuth provider and ID combination</comment>
+
+        <createIndex tableName="users" indexName="idx_users_oauth_provider_id" unique="true">
+            <column name="oauth_provider"/>
+            <column name="oauth_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

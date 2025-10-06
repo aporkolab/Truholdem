@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <changeSet id="01-create-poker-games-table" author="truholdem">
+        <createTable tableName="poker_games">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="current_pot" type="INT" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="phase" type="VARCHAR(20)" defaultValue="PRE_FLOP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="current_player_index" type="INT" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="current_bet" type="INT" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="small_blind" type="INT" defaultValue="10">
+                <constraints nullable="false"/>
+            </column>
+            <column name="big_blind" type="INT" defaultValue="20">
+                <constraints nullable="false"/>
+            </column>
+            <column name="game_status" type="VARCHAR(20)" defaultValue="ACTIVE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="02-create-players-table" author="truholdem">
+        <createTable tableName="players">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="chips" type="INT" defaultValue="1000">
+                <constraints nullable="false"/>
+            </column>
+            <column name="bet_amount" type="INT" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_folded" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_bot" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="has_acted" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="game_id" type="UUID">
+                <constraints nullable="true" foreignKeyName="fk_player_game" references="poker_games(id)"/>
+            </column>
+            <column name="position" type="INT">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="03-create-game-community-cards-table" author="truholdem">
+        <createTable tableName="game_community_cards">
+            <column name="game_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_community_cards_game" references="poker_games(id)"/>
+            </column>
+            <column name="suit" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="community_cards_order" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="04-create-game-deck-table" author="truholdem">
+        <createTable tableName="game_deck">
+            <column name="game_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_deck_game" references="poker_games(id)"/>
+            </column>
+            <column name="suit" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deck_order" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="05-create-player-hand-table" author="truholdem">
+        <createTable tableName="player_hand">
+            <column name="player_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_hand_player" references="players(id)"/>
+            </column>
+            <column name="suit" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="hand_order" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="06-add-indexes" author="truholdem">
+        <createIndex tableName="poker_games" indexName="idx_poker_games_status_created">
+            <column name="game_status"/>
+            <column name="created_at"/>
+        </createIndex>
+        
+        <createIndex tableName="players" indexName="idx_players_game_id">
+            <column name="game_id"/>
+        </createIndex>
+        
+        <createIndex tableName="players" indexName="idx_players_name">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

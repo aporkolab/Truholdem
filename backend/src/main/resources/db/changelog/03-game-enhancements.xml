@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="03-add-game-enhancements" author="truholdem">
+        <comment>Add new fields for enhanced poker game logic</comment>
+
+        
+        <addColumn tableName="poker_games">
+            <column name="dealer_position" type="INT" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="winner_name" type="VARCHAR(255)"/>
+            <column name="winning_hand_description" type="VARCHAR(500)"/>
+            <column name="is_finished" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="hand_number" type="INT" defaultValue="1">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_raise_amount" type="INT" defaultValue="0"/>
+            <column name="min_raise_amount" type="INT" defaultValue="20"/>
+        </addColumn>
+
+        
+        <addColumn tableName="players">
+            <column name="total_bet_in_round" type="INT" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_all_in" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="seat_position" type="INT" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        
+        <createTable tableName="game_winner_ids">
+            <column name="game_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="winner_ids" type="UUID"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="game_winner_ids"
+                baseColumnNames="game_id"
+                constraintName="fk_game_winner_ids_game"
+                referencedTableName="poker_games"
+                referencedColumnNames="id"
+                onDelete="CASCADE"/>
+
+        
+        <createTable tableName="game_side_pots">
+            <column name="game_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount" type="INT" defaultValue="0"/>
+            <column name="contribution_per_player" type="INT" defaultValue="0"/>
+            <column name="side_pots_order" type="INT"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="game_side_pots"
+                baseColumnNames="game_id"
+                constraintName="fk_game_side_pots_game"
+                referencedTableName="poker_games"
+                referencedColumnNames="id"
+                onDelete="CASCADE"/>
+
+        
+        <createTable tableName="side_pot_eligible_player_ids">
+            <column name="side_pot_game_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="side_pot_order" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="eligible_player_ids" type="UUID"/>
+        </createTable>
+
+    </changeSet>
+
+    <changeSet id="03-add-indexes" author="truholdem">
+        <comment>Add indexes for better query performance</comment>
+
+        <createIndex tableName="poker_games" indexName="idx_games_finished">
+            <column name="is_finished"/>
+        </createIndex>
+
+        <createIndex tableName="players" indexName="idx_players_folded">
+            <column name="is_folded"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

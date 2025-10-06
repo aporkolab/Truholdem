@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <include file="db/changelog/01-initial-schema.xml"/>
+    <include file="db/changelog/02-add-users-and-authentication.xml"/>
+    <include file="db/changelog/03-game-enhancements.xml"/>
+    <include file="db/changelog/04-advanced-features.xml"/>
+    <include file="db/changelog/05-history-and-stats.xml"/>
+    <include file="db/changelog/06-optimistic-locking.xml"/>
+    <include file="db/changelog/07-tournaments.xml"/>
+    <include file="db/changelog/08-player-user-link.xml"/>
+    <include file="db/changelog/09-oauth-support.xml"/>
+
+</databaseChangeLog>
