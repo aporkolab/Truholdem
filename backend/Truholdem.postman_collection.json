@@ -1,0 +1,234 @@
+{
+	"info": {
+		"_postman_id": "672da6f7-2d7a-494f-bcf2-595071d16c0c",
+		"name": "Truholdem",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "16944884"
+	},
+"item": [
+		{
+			"name": "1. Start Game",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:8080/api/poker/start",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"poker",
+						"start"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2. Deal Flop",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:8080/api/poker/flop",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"poker",
+						"flop"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3. Deal Turn",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:8080/api/poker/turn",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"poker",
+						"turn"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "4. Deal River",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:8080/api/poker/river",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"poker",
+						"river"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "5. Register Player",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "\"Player1\""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/poker/register",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"poker",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "6. Place Bet",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "playerId",
+							"value": "Player1",
+							"type": "text"
+						},
+						{
+							"key": "amount",
+							"value": "100",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/poker/bet",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"poker",
+						"bet"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "7. Fold",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "playerId",
+							"value": "Player1",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/poker/fold",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"poker",
+						"fold"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "8. Get Game Status",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:8080/api/poker/status",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"poker",
+						"status"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "9. End Game",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:8080/api/poker/end",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"poker",
+						"end"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
