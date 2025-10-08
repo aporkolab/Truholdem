@@ -1,0 +1,534 @@
+
+
+
+
+
+
+:root {
+  
+  --focus-color: #005fcc;
+  --focus-outline-width: 3px;
+  --focus-outline-offset: 2px;
+  
+  
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  
+  
+  --color-success: #0d7a0d;
+  --color-error: #c41e3a;
+  --color-warning: #856404;
+  --color-info: #0055aa;
+  
+  
+  --min-touch-target: 44px;
+}
+
+
+
+
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+
+.sr-only-focusable {
+  &:focus,
+  &:active {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+    clip: auto !important;
+    white-space: normal !important;
+  }
+}
+
+
+
+
+
+
+:focus-visible {
+  outline: var(--focus-outline-width) solid var(--focus-color);
+  outline-offset: var(--focus-outline-offset);
+  box-shadow: 0 0 0 6px rgba(0, 95, 204, 0.25);
+}
+
+
+:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: var(--focus-outline-width) solid var(--focus-color);
+  outline-offset: var(--focus-outline-offset);
+  box-shadow: 0 0 0 6px rgba(0, 95, 204, 0.25);
+  border-radius: 4px;
+}
+
+
+.action-buttons:focus-within {
+  outline: 2px dashed var(--focus-color);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+
+
+
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 16px;
+  z-index: 10000;
+  padding: 12px 24px;
+  background: var(--focus-color);
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 16px;
+  border-radius: 0 0 8px 8px;
+  transition: top 0.15s ease-out;
+  
+  &:focus {
+    top: 0;
+    outline: 3px solid #ffcc00;
+    outline-offset: 2px;
+  }
+}
+
+
+
+
+
+button,
+a,
+input[type="checkbox"],
+input[type="radio"],
+.clickable,
+[role="button"] {
+  min-height: var(--min-touch-target);
+  min-width: var(--min-touch-target);
+}
+
+
+.btn,
+button:not(.btn-icon) {
+  padding: 12px 20px;
+  min-height: var(--min-touch-target);
+}
+
+
+
+
+
+
+body {
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+}
+
+
+.label,
+.text-secondary,
+.text-muted {
+  color: var(--text-secondary); 
+}
+
+
+.status-success { color: var(--color-success); }
+.status-error { color: var(--color-error); }
+.status-warning { 
+  color: var(--color-warning);
+  background: #fff3cd;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.status-info { color: var(--color-info); }
+
+
+
+
+
+
+.player.folded {
+  opacity: 0.6;
+  
+  .player-name::after {
+    content: " (Folded)";
+    font-style: italic;
+  }
+  
+  .player-cards .card {
+    filter: grayscale(100%);
+    text-decoration: line-through;
+  }
+}
+
+
+.player.all-in {
+  .player-name::after {
+    content: " (All-In)";
+    font-weight: bold;
+    color: var(--color-warning);
+  }
+  
+  border: 3px double var(--color-warning);
+}
+
+
+.player.active-turn {
+  .player-name::before {
+    content: "▶ ";
+    animation: pulse-indicator 1s ease-in-out infinite;
+  }
+  
+  border: 3px solid var(--focus-color);
+  box-shadow: 0 0 10px rgba(0, 95, 204, 0.5);
+}
+
+@keyframes pulse-indicator {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+
+
+
+
+.keyboard-shortcut-hint {
+  display: none;
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 22px;
+  height: 22px;
+  background: #333;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  font-family: 'Consolas', 'Monaco', monospace;
+  line-height: 22px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+.keyboard-navigation-active .keyboard-shortcut-hint {
+  display: block;
+}
+
+
+
+
+
+@media (prefers-contrast: high) {
+  :root {
+    --focus-color: #0000ff;
+    --focus-outline-width: 4px;
+    --text-primary: #000000;
+    --text-secondary: #000000;
+    --bg-primary: #ffffff;
+  }
+  
+  
+  button,
+  input,
+  select,
+  textarea,
+  .card,
+  .player {
+    border: 2px solid #000000 !important;
+  }
+  
+  
+  :focus-visible {
+    outline: 4px solid #0000ff !important;
+    outline-offset: 4px !important;
+    box-shadow: 0 0 0 8px rgba(0, 0, 255, 0.5) !important;
+  }
+  
+  
+  * {
+    text-shadow: none !important;
+    box-shadow: none !important;
+  }
+  
+  
+  .card {
+    border: 3px solid #000 !important;
+  }
+  
+  
+  .player.folded {
+    text-decoration: line-through;
+  }
+  
+  .player.active-turn {
+    border: 4px solid #0000ff !important;
+  }
+}
+
+
+
+
+
+@media (forced-colors: active) {
+  
+  :focus-visible {
+    outline: 3px solid Highlight !important;
+    outline-offset: 2px;
+  }
+  
+  button,
+  input,
+  select {
+    border: 2px solid ButtonText;
+  }
+  
+  button:hover,
+  button:focus {
+    border-color: Highlight;
+  }
+  
+  
+  .card {
+    border: 2px solid CanvasText;
+    forced-color-adjust: none;
+  }
+  
+  
+  .player.active-turn {
+    outline: 3px solid Highlight;
+  }
+}
+
+
+
+
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  
+  .card-inner {
+    transition: none !important;
+    transform: none !important;
+  }
+  
+  .card-inner.is-flipped {
+    transform: none !important;
+  }
+  
+  .card-inner.is-flipped .card-back {
+    display: none;
+  }
+  
+  
+  @keyframes pulse-indicator {
+    0%, 100% { opacity: 1; }
+  }
+  
+  
+  .player.active-turn {
+    border: 3px solid var(--focus-color);
+    
+    box-shadow: 0 0 15px rgba(0, 95, 204, 0.7);
+  }
+  
+  
+  .spinner,
+  .spinner-small {
+    animation: none !important;
+    &::after {
+      content: "Loading...";
+    }
+  }
+}
+
+
+
+
+
+
+body {
+  
+  line-height: 1.5;
+  
+  
+  letter-spacing: normal;
+  word-spacing: normal;
+}
+
+
+.game-table,
+.player,
+.modal-content {
+  overflow: visible;
+}
+
+
+.text-spacing-test {
+  line-height: 1.5 !important;
+  letter-spacing: 0.12em !important;
+  word-spacing: 0.16em !important;
+  p { margin-bottom: 2em !important; }
+}
+
+
+
+
+
+button:disabled,
+input:disabled,
+select:disabled,
+.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  
+  
+  &::after {
+    @extend .sr-only;
+    content: "(disabled)";
+  }
+}
+
+
+
+
+
+.modal-overlay {
+  
+  &[aria-modal="true"] {
+    
+    &::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: -1;
+    }
+  }
+}
+
+dialog[open] {
+  
+  display: block;
+  
+  
+  &:focus {
+    outline: 3px solid var(--focus-color);
+    outline-offset: 2px;
+  }
+}
+
+
+.btn-close,
+[aria-label="Close"] {
+  min-width: var(--min-touch-target);
+  min-height: var(--min-touch-target);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+
+
+
+[aria-live] {
+  
+  &:empty {
+    display: none;
+  }
+}
+
+
+.announcement-toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 24px;
+  background: #333;
+  color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 10000;
+  max-width: 300px;
+  
+  &[aria-live="assertive"] {
+    background: var(--color-error);
+  }
+}
+
+
+
+
+
+
+label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+
+input[aria-invalid="true"],
+select[aria-invalid="true"],
+textarea[aria-invalid="true"] {
+  border-color: var(--color-error);
+  
+  &:focus {
+    outline-color: var(--color-error);
+    box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.25);
+  }
+}
+
+
+label[data-required]::after {
+  content: " *";
+  color: var(--color-error);
+}
+
+
+.error-message,
+[role="alert"] {
+  color: var(--color-error);
+  font-size: 14px;
+  margin-top: 4px;
+  
+  &::before {
+    content: "⚠ ";
+  }
+}

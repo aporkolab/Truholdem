@@ -1,0 +1,38 @@
+@use 'styles/accessibility';
+
+// Import Bootstrap CSS (after @use rules)
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  color: #1a1a1a;
+  background-color: #ffffff;
+  line-height: 1.5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+
+.js-focus-visible :focus:not(.focus-visible) {
+  outline: none;
+}
+
+.js-focus-visible .focus-visible {
+  outline: 3px solid var(--focus-color, #005fcc);
+  outline-offset: 2px;
+}
