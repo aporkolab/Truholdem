@@ -1,0 +1,39 @@
+<div class="app-container">
+  <!-- Global Notification Component -->
+  <app-notification></app-notification>
+
+  <nav class="main-nav">
+    <a routerLink="/" class="nav-brand">
+      <span class="brand-icon">🃏</span>
+      <span class="brand-text">TruHoldem</span>
+    </a>
+    
+    <div class="nav-links">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+        🎮 Play
+      </a>
+      <a routerLink="/leaderboard" routerLinkActive="active">
+        🏆 Leaderboard
+      </a>
+      <a routerLink="/settings" routerLinkActive="active">
+        ⚙️ Settings
+      </a>
+    </div>
+
+    <div class="nav-actions">
+      <button class="sound-toggle" (click)="toggleSound()" [title]="soundEnabled ? 'Mute' : 'Unmute'">
+        {{ soundEnabled ? '🔊' : '🔇' }}
+      </button>
+    </div>
+  </nav>
+
+  
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+
+  
+  <footer class="main-footer">
+    <span>TruHoldem v2.0 - Texas Hold'em Poker Simulator</span>
+  </footer>
+</div>
