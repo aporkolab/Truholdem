@@ -1,0 +1,208 @@
+<div class="game-table" data-cy="poker-table">
+
+	
+	<div *ngIf="isLoading()" class="loading-overlay" data-cy="loading-overlay">
+		<div class="spinner"></div>
+		<span>Loading...</span>
+	</div>
+
+	
+	<div *ngIf="error()" class="error-banner" data-cy="error-notification" role="alert" (click)="clearError()" (keydown.enter)="clearError()" tabindex="0">
+		{{ error() }}
+		<span class="close-btn" data-cy="close-error-btn">×</span>
+	</div>
+
+	
+	<div class="game-info-bar" data-cy="game-info-bar">
+		<div class="phase-indicator" data-cy="game-phase">
+			<span class="label">Phase:</span>
+			<span class="value" data-cy="phase-value">{{ phaseDisplayName() }}</span>
+		</div>
+		<div class="pot-display" data-cy="pot-display">
+			<span class="label">Pot:</span>
+			<span class="value" data-cy="pot-value">${{ potSize() }}</span>
+		</div>
+		<div class="hand-number" *ngIf="game()?.handNumber" data-cy="hand-number">
+			<span class="label">Hand:</span>
+			<span class="value">#{{ game()?.handNumber }}</span>
+		</div>
+		<div class="current-bet" *ngIf="currentBet() > 0" data-cy="current-bet">
+			<span class="label">Bet:</span>
+			<span class="value">${{ currentBet() }}</span>
+		</div>
+	</div>
+
+	
+	<div *ngFor="let player of sortedPlayers(); let i = index"
+		class="player"
+		[class.seat-0]="player.seatPosition === 0"
+		[class.seat-1]="player.seatPosition === 1"
+		[class.seat-2]="player.seatPosition === 2"
+		[class.seat-3]="player.seatPosition === 3"
+		[class.user]="!player.isBot"
+		[class.active-turn]="isPlayerTurn(player)"
+		[class.folded]="player.folded"
+		[class.all-in]="player.isAllIn"
+		[attr.data-cy]="!player.isBot ? 'human-seat' : 'bot-seat-' + player.seatPosition"
+		[attr.data-player-name]="player.name"
+		[attr.aria-current]="isPlayerTurn(player) ? 'true' : null"
+		data-cy="player-seat">
+
+		
+		<div *ngIf="isDealer(i)" class="dealer-button" title="Dealer" data-cy="dealer-button">D</div>
+
+		
+		<div class="player-cards" data-cy="player-cards" role="list" aria-label="Player cards">
+			<div *ngFor="let card of player.hand; let j = index" 
+				class="card" 
+				[style.animation-delay.s]="0.1 * j"
+				data-cy="player-card"
+				role="listitem">
+				<div class="card-inner"
+					[class.is-flipped]="!player.folded && (phase() === 'SHOWDOWN' || !(player.name && player.name.startsWith('Bot')))">
+					<div class="card-front">
+						<img [src]="getCardImage(card)" [alt]="card.value + ' of ' + card.suit" class="card-image" />
+					</div>
+					<div class="card-back">
+						<img [src]="getCardBackImage()" alt="Card Back" class="card-image" />
+					</div>
+				</div>
+			</div>
+		</div>
+
+		
+		<div class="player-info" data-cy="player-info">
+			<div class="player-name" data-cy="player-name">
+				{{ (player.name || 'Anonymous').replace('Bot', 'Bot ') }}
+				<span *ngIf="isPlayerTurn(player)" class="turn-indicator" data-cy="turn-indicator">⏱</span>
+			</div>
+			<div class="player-chips" data-cy="player-chips">
+				<span class="chip-icon">💰</span>
+				${{ player.chips }}
+			</div>
+			<div class="player-bet" *ngIf="player.betAmount > 0" data-cy="player-bet">
+				Bet: ${{ player.betAmount }}
+			</div>
+			<div class="player-status" *ngIf="getPlayerStatus(player)" data-cy="player-status">
+				{{ getPlayerStatus(player) }}
+			</div>
+		</div>
+	</div>
+
+	
+	<div class="community-cards" data-cy="community-cards" role="region" aria-label="Community Cards">
+		<div class="community-cards-label" *ngIf="communityCards().length > 0">Community Cards</div>
+		<div class="cards-container" data-cy="community-cards-container" role="list">
+			<div *ngFor="let card of communityCards(); let k = index; trackBy: trackByCommunityCard"
+				class="card"
+				[style.animation-delay.s]="0.3 + (0.1 * k)"
+				data-cy="community-card"
+				role="listitem">
+				<div class="card-inner is-flipped">
+					<div class="card-front">
+						<img [src]="getCardImage(card)" [alt]="card.value + ' of ' + card.suit" class="card-image" />
+					</div>
+					<div class="card-back">
+						<img [src]="getCardBackImage()" alt="Card Back" class="card-image" />
+					</div>
+				</div>
+			</div>
+			
+			<div *ngFor="let placeholder of placeholderCards(); trackBy: trackByCardIndex"
+				 class="card card-placeholder"
+				 data-cy="card-placeholder">
+				<div class="card-inner">
+					<div class="card-back">
+						<img [src]="getCardBackImage()" alt="Card Placeholder" class="card-image placeholder-image" />
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	
+	<div class="actions" *ngIf="!isGameFinished() && phase() !== 'SHOWDOWN'" data-cy="actions-section" role="toolbar" aria-label="Player actions">
+		<div class="action-buttons" *ngIf="canPlayerAct()" data-cy="action-buttons">
+			
+			<button class="btn btn-danger" (click)="fold()" data-cy="fold-btn" type="button">
+				Fold
+			</button>
+
+			
+			<button *ngIf="canCheck()" class="btn btn-secondary" (click)="check()" data-cy="check-btn" type="button">
+				Check
+			</button>
+
+			
+			<button *ngIf="!canCheck() && canCall()" class="btn btn-primary" (click)="call()" data-cy="call-btn" type="button">
+				Call ${{ callAmount() }}
+			</button>
+
+			
+			<app-raise-input 
+				[game]="game()"
+				(actionTaken)="handleRaiseAction($event)"
+				data-cy="raise-input-component">
+			</app-raise-input>
+
+			
+			<button class="btn btn-warning" (click)="allIn()" 
+				*ngIf="humanPlayer() && humanPlayer()!.chips > 0"
+				data-cy="all-in-btn"
+				type="button">
+				All-In (${{ humanPlayer()?.chips || 0 }})
+			</button>
+		</div>
+
+		
+		<div class="waiting-message" *ngIf="!canPlayerAct() && !isFolded()" data-cy="waiting-message">
+			<span class="spinner-small"></span>
+			Waiting for {{ currentPlayer()?.name || 'opponent' }}...
+		</div>
+
+		
+		<div class="folded-message" *ngIf="isFolded()" data-cy="folded-message">
+			You folded this hand. Waiting for result...
+		</div>
+	</div>
+
+	
+	<div class="showdown-actions" *ngIf="phase() === 'SHOWDOWN' && !showModal()" data-cy="showdown-actions">
+		<button class="btn btn-primary btn-lg" (click)="openModal()" data-cy="show-results-btn" type="button">
+			Show Results
+		</button>
+	</div>
+
+	
+	<div class="modal-overlay" *ngIf="showModal()" (click)="closeModal()" (keydown.escape)="closeModal()" data-cy="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1">
+		<div class="modal-dialog" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()" data-cy="result-modal" role="document" tabindex="0">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="modal-title" data-cy="modal-title">🏆 Game Result</h5>
+					<button type="button" class="btn-close" (click)="closeModal()" aria-label="Close" data-cy="modal-close-btn">×</button>
+				</div>
+				<div class="modal-body" data-cy="modal-body">
+					<p class="winner-message" data-cy="winner-display">{{ gameResultMessage() }}</p>
+					<p class="winning-hand" *ngIf="winningHandDescription()" data-cy="winning-hand">
+						<strong>Winning Hand:</strong> {{ winningHandDescription() }}
+					</p>
+					<div class="final-pot" *ngIf="potSize() > 0" data-cy="final-pot">
+						<strong>Final Pot:</strong> ${{ potSize() }}
+					</div>
+				</div>
+				<div class="modal-footer" data-cy="modal-footer">
+					<button type="button" class="btn btn-primary" (click)="startNewHand()" data-cy="next-hand-btn">
+						Next Hand
+					</button>
+					<button type="button" class="btn btn-success" (click)="startNewGame()" data-cy="new-game-modal-btn">
+						New Game
+					</button>
+					<button type="button" class="btn btn-secondary" (click)="goToLobby()" data-cy="back-to-lobby-btn">
+						Back to Lobby
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+</div>
