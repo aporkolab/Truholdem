@@ -1,0 +1,194 @@
+label {
+  color: #fff;
+}
+
+body {
+  background-color: #004d00;
+  background-size: cover;
+  margin: 0;
+  padding: 0;
+  font-family: 'Arial', sans-serif;
+  color: #fff;
+}
+
+.container {
+  width: 90%;
+  max-width: 650px;
+  margin: 50px auto;
+  padding: 30px;
+  background: rgba(10, 10, 10, 0.9);
+  background-image: url('https://media.giphy.com/media/l2R07bau07BApqEdW/giphy.gif');
+  border-radius: 20px;
+  box-shadow: 0 0 30px rgba(0, 255, 0, 0.7);
+}
+
+h2 {
+  margin-bottom: 20px;
+  text-align: center;
+  color: #d4af37;
+  font-size: 32px;
+  text-shadow: 0 0 15px #ff0000;
+}
+
+.logo-placeholder {
+  display: block;
+  height: 10rem;
+  background: url('../../assets/Baccaratio.png') no-repeat center;
+  background-size: contain;
+  margin-bottom: 20px;
+}
+
+.player-entry {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 10px;
+  margin-bottom: 15px;
+  align-items: center;
+}
+
+input[type="text"],
+input[type="number"] {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ff4500;
+  border-radius: 10px;
+  background-color: #000;
+  color: #fff;
+}
+
+input[type="checkbox"] {
+  accent-color: #d4af37;
+}
+
+#buttons {
+  text-align: center;
+}
+
+label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+button {
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: 2px solid #d4af37;
+  background-color: #000;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.3s, background-color 0.3s;
+}
+
+button:hover {
+  transform: scale(1.05);
+  background-color: #d4af37;
+  color: #000;
+}
+
+.submit-btn {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 768px) {
+  .player-entry {
+    grid-template-columns: 1fr auto auto;
+  }
+
+  .submit-btn {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Raise Modal Styles */
+.raise-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.5s ease;
+}
+
+.raise-input-box {
+  position: relative;
+  background: #f0f0f0;
+  padding: 30px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.5s ease;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #ff0000;
+}
+
+.raise-input-box .info {
+  margin-bottom: 15px;
+  color: #333;
+  font-weight: bold;
+}
+
+.raise-input-box input {
+  margin-bottom: 20px;
+  padding: 10px;
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.raise-input-box .actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.raise-btn,
+.all-in-btn {
+  transition: transform 0.3s ease;
+}
+
+.raise-btn:hover,
+.all-in-btn:hover {
+  transform: scale(1.1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

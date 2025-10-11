@@ -1,0 +1,374 @@
+label {
+  color: #fff;
+}
+
+body {
+  background-color: #004d00;
+  background-size: cover;
+  margin: 0;
+  padding: 0;
+  font-family: 'Arial', sans-serif;
+  color: #fff;
+}
+
+.container {
+  width: 90%;
+  max-width: 650px;
+  margin: 50px auto;
+  padding: 30px;
+  background: rgba(10, 10, 10, 0.9);
+  background-image: url('https://media.giphy.com/media/l2R07bau07BApqEdW/giphy.gif');
+  border-radius: 20px;
+  box-shadow: 0 0 30px rgba(0, 255, 0, 0.7);
+}
+
+h2 {
+  margin-bottom: 20px;
+  text-align: center;
+  color: #d4af37;
+  font-size: 32px;
+  text-shadow: 0 0 15px #ff0000;
+}
+
+.logo-placeholder {
+  display: block;
+  height: 10rem;
+  background: url('../../assets/Baccaratio.png') no-repeat center;
+  background-size: contain;
+  margin-bottom: 20px;
+}
+
+.player-entry {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 10px;
+  margin-bottom: 15px;
+  align-items: center;
+}
+
+input[type="text"],
+input[type="number"] {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ff4500;
+  border-radius: 10px;
+  background-color: #000;
+  color: #fff;
+}
+
+input[type="checkbox"] {
+  accent-color: #d4af37;
+}
+
+#buttons {
+  text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+button {
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: 2px solid #d4af37;
+  background-color: #000;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.3s, background-color 0.3s;
+}
+
+button:hover {
+  transform: scale(1.05);
+  background-color: #d4af37;
+  color: #000;
+}
+
+.submit-btn {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 768px) {
+  .player-entry {
+    grid-template-columns: 1fr auto auto;
+  }
+
+  .submit-btn {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Raise Modal Styles */
+.raise-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.5s ease;
+}
+
+.raise-input-box {
+  position: relative;
+  background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+  padding: 30px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  animation: slideIn 0.5s ease;
+  min-width: 320px;
+  max-width: 400px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+
+  // All text inside the box should be white/light
+  color: #fff;
+
+  h4, .raise-header h4 {
+    color: #d4af37;
+    margin: 0;
+    font-size: 1.4rem;
+  }
+
+  .raise-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .raise-info {
+    width: 100%;
+    margin-bottom: 20px;
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+      .label {
+        color: #aaa;
+        font-size: 0.9rem;
+      }
+
+      .value {
+        color: #4ade80;
+        font-weight: 600;
+        font-size: 1rem;
+      }
+    }
+  }
+
+  .quick-bets {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+
+      &.btn-outline-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #fff;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.2);
+          transform: translateY(-2px);
+        }
+      }
+
+      &.btn-outline-warning {
+        background: rgba(234, 179, 8, 0.2);
+        border: 1px solid #eab308;
+        color: #eab308;
+
+        &:hover {
+          background: #eab308;
+          color: #000;
+          transform: translateY(-2px);
+        }
+      }
+    }
+  }
+
+  .amount-input {
+    width: 100%;
+    margin-bottom: 20px;
+
+    label {
+      color: #aaa;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+
+      .input-prefix {
+        padding: 0 12px;
+        color: #4ade80;
+        font-weight: 600;
+        font-size: 1.1rem;
+      }
+
+      input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 1.2rem;
+        padding: 12px;
+
+        &:focus {
+          outline: none;
+        }
+      }
+    }
+
+    .form-range {
+      width: 100%;
+      margin-top: 15px;
+      accent-color: #d4af37;
+    }
+  }
+
+  .error-message {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .raise-actions {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    justify-content: center;
+
+    .btn-success {
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      border: none;
+      padding: 12px 24px;
+      font-weight: 600;
+      color: #fff;
+
+      &:hover {
+        background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+        transform: translateY(-2px);
+      }
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+    }
+  }
+}
+
+.close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #888;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #ff4444;
+  }
+}
+
+.raise-input-box .info {
+  margin-bottom: 15px;
+  color: #fff;
+  font-weight: bold;
+}
+
+.raise-input-box input {
+  margin-bottom: 20px;
+  padding: 10px;
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.raise-input-box .actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.raise-btn,
+.all-in-btn {
+  transition: transform 0.3s ease;
+}
+
+.raise-btn:hover,
+.all-in-btn:hover {
+  transform: scale(1.1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

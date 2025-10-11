@@ -1,0 +1,46 @@
+<div id="full" data-cy="register-players-page">
+	<div class="container">
+		<h2 data-cy="page-title">Player Registration <span class="logo-placeholder"></span></h2>
+		<form (ngSubmit)="onSubmit()" #playerForm="ngForm" data-cy="player-form">
+			<div *ngFor="let player of players; let i = index" class="player-entry" [attr.data-cy]="'player-entry-' + i">
+				<input 
+					type="text" 
+					[(ngModel)]="player.name" 
+					[name]="'playerName' + i" 
+					placeholder="Player Name" 
+					required
+					data-cy="player-name-input"
+					[attr.data-cy-index]="i"
+					aria-label="Player name">
+				<input 
+					type="number" 
+					[(ngModel)]="player.startingChips" 
+					[name]="'startingChips' + i"
+					placeholder="Starting Chips" 
+					required
+					data-cy="player-chips-input"
+					[attr.data-cy-index]="i"
+					aria-label="Starting chips">
+				<label data-cy="bot-label">
+					<input 
+						type="checkbox" 
+						[(ngModel)]="player.isBot" 
+						[name]="'isBot' + i"
+						data-cy="is-bot-checkbox"
+						[attr.data-cy-index]="i"> Is Bot?
+				</label>
+				<button 
+					class="remove-btn" 
+					(click)="removePlayer(i)" 
+					type="button"
+					data-cy="remove-player-btn"
+					[attr.data-cy-index]="i"
+					aria-label="Remove player">Remove</button>
+			</div>
+			<div id="buttons" data-cy="form-buttons">
+				<button type="submit" class="submit-btn" data-cy="start-game-btn">Register</button>
+				<button class="add-btn" (click)="addPlayer()" type="button" data-cy="add-player-btn">Add Player</button>
+			</div>
+		</form>
+	</div>
+</div>

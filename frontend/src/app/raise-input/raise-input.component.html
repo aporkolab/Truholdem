@@ -1,0 +1,92 @@
+<div class="raise-container" *ngIf="canRaise()" data-cy="raise-container">
+	
+	<button type="button" class="btn btn-primary raise-btn" (click)="showRaiseInput()" data-cy="raise-btn">
+		{{ getButtonLabel() }}
+	</button>
+</div>
+
+
+<div *ngIf="isRaiseInputVisible" class="raise-overlay" (click)="cancelRaise()" (keydown.escape)="cancelRaise()" data-cy="raise-overlay" role="dialog" aria-modal="true" aria-labelledby="raise-title" tabindex="-1">
+	<div class="raise-input-box" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()" data-cy="raise-modal" role="document" tabindex="0">
+		<div class="raise-header">
+			<h4 id="raise-title" data-cy="raise-title">{{ getButtonLabel() }}</h4>
+			<button class="close-btn" (click)="cancelRaise()" data-cy="raise-close-btn" aria-label="Close">×</button>
+		</div>
+
+		<div class="raise-info" data-cy="raise-info">
+			<div class="info-row">
+				<span class="label">Minimum:</span>
+				<span class="value" data-cy="min-raise-value">${{ minRaiseAmount }}</span>
+			</div>
+			<div class="info-row">
+				<span class="label">Maximum (All-in):</span>
+				<span class="value" data-cy="max-raise-value">${{ maxRaiseAmount }}</span>
+			</div>
+			<div class="info-row" *ngIf="game?.currentPot">
+				<span class="label">Current Pot:</span>
+				<span class="value" data-cy="pot-info">${{ game?.currentPot }}</span>
+			</div>
+		</div>
+
+		
+		<div class="quick-bets" data-cy="quick-bets">
+			<button type="button" class="btn btn-outline-secondary btn-sm" (click)="setMinRaise()" data-cy="btn-min-raise">
+				Min
+			</button>
+			<button type="button" class="btn btn-outline-secondary btn-sm" (click)="setHalfPot()" 
+				*ngIf="(game?.currentPot ?? 0) > 0" data-cy="btn-half-pot">
+				½ Pot
+			</button>
+			<button type="button" class="btn btn-outline-secondary btn-sm" (click)="setFullPot()"
+				*ngIf="(game?.currentPot ?? 0) > 0" data-cy="btn-full-pot">
+				Pot
+			</button>
+			<button type="button" class="btn btn-outline-warning btn-sm" (click)="setAllIn()" data-cy="btn-quick-allin">
+				All-In
+			</button>
+		</div>
+
+		
+		<div class="amount-input" data-cy="amount-input-section">
+			<label for="raiseAmount">Amount:</label>
+			<div class="input-group">
+				<span class="input-prefix">$</span>
+				<input 
+					type="number" 
+					id="raiseAmount"
+					[(ngModel)]="raiseAmount" 
+					[min]="minRaiseAmount" 
+					[max]="maxRaiseAmount"
+					placeholder="Enter amount"
+					class="form-control"
+					data-cy="raise-input"
+					aria-label="Raise amount" />
+			</div>
+			
+			<input 
+				type="range" 
+				class="form-range"
+				[(ngModel)]="raiseAmount"
+				[min]="minRaiseAmount"
+				[max]="maxRaiseAmount"
+				step="10"
+				data-cy="raise-slider"
+				aria-label="Raise amount slider" />
+		</div>
+
+		
+		<div *ngIf="errorMessage" class="error-message" data-cy="raise-error" role="alert">
+			{{ errorMessage }}
+		</div>
+
+		
+		<div class="raise-actions" data-cy="raise-actions">
+			<button type="button" class="btn btn-success btn-lg" (click)="confirmRaise()" data-cy="confirm-raise-btn">
+				{{ getButtonLabel() }} ${{ raiseAmount }}
+			</button>
+			<button type="button" class="btn btn-secondary" (click)="cancelRaise()" data-cy="cancel-raise-btn">
+				Cancel
+			</button>
+		</div>
+	</div>
+</div>
