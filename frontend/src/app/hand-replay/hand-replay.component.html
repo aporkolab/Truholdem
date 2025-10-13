@@ -1,0 +1,330 @@
+<div class="hand-replay" *ngIf="replay && replayState" data-cy="hand-replay-page">
+  
+  
+  <div class="replay-header" data-cy="replay-header">
+    <h3 data-cy="replay-title">Hand #{{ replay.handNumber }} Replay</h3>
+    <div class="header-info" data-cy="header-info">
+      <span class="blinds" data-cy="blinds-info">Blinds: ${{ replay.smallBlind }}/${{ replay.bigBlind }}</span>
+      <span class="pot" data-cy="final-pot-info">Final Pot: ${{ replay.finalPot }}</span>
+    </div>
+  </div>
+
+  
+  <div class="replay-content" data-cy="replay-content">
+    
+    
+    <div class="table-visualization" data-cy="table-visualization">
+      
+      
+      <div class="board-section" data-cy="board-section">
+        <div class="phase-label" 
+             [ngClass]="getPhaseClass(replayState.phase)"
+             data-cy="replay-phase">
+          {{ formatPhase(replayState.phase) }}
+        </div>
+        
+        <div class="community-cards" 
+             [@cardDeal]="revealedCardsCount()"
+             data-cy="replay-community-cards" 
+             role="list">
+          <span 
+            *ngFor="let card of replayState.board; let j = index" 
+            class="card large"
+            [class.red]="formatCard(card).isRed"
+            [class.newly-revealed]="isNewlyRevealedCard(j)"
+            [@cardReveal]
+            [attr.data-cy]="'community-card-' + j"
+            data-cy="replay-community-card"
+            role="listitem">
+            {{ formatCard(card).symbol }}
+          </span>
+          
+          
+          <span 
+            *ngFor="let _ of [].constructor(5 - replayState.board.length)" 
+            class="card large empty"
+            data-cy="card-placeholder">
+            ?
+          </span>
+        </div>
+
+        
+        <div class="pot-display" 
+             [@potChange]="currentPot()"
+             data-cy="replay-pot-display">
+          <span class="pot-label">Pot:</span>
+          <span class="pot-amount">${{ replayState.pot }}</span>
+        </div>
+      </div>
+
+      
+      <div class="players-section" data-cy="players-section" role="list">
+        <div 
+          *ngFor="let player of playersAtStep(); let i = index; trackBy: trackByPlayerId" 
+          class="player-card"
+          [class.active]="isActivePlayer(player)"
+          [class.folded]="player.folded"
+          [class.dealer]="player.isDealer"
+          [@playerHighlight]="getPlayerAnimationState(player)"
+          [attr.data-cy]="'replay-player-' + i"
+          data-cy="replay-player-card"
+          [attr.data-player-name]="player.name"
+          role="listitem">
+          
+          
+          <div class="player-info" data-cy="player-info">
+            <span class="player-name" data-cy="player-name">{{ player.name }}</span>
+            <span class="dealer-button" *ngIf="player.isDealer" data-cy="dealer-button">D</span>
+          </div>
+
+          
+          <div class="player-chips" data-cy="player-chips">
+            ${{ player.chips }}
+          </div>
+
+          
+          <div class="player-bet" *ngIf="player.bet > 0" data-cy="player-bet">
+            Bet: ${{ player.bet }}
+          </div>
+
+          
+          <div class="hole-cards" 
+               *ngIf="showCards() || replayState.isComplete" 
+               data-cy="hole-cards-visible">
+            <span 
+              class="card" 
+              [class.red]="formatCard(player.holeCard1).isRed"
+              data-cy="hole-card-1">
+              {{ formatCard(player.holeCard1).symbol }}
+            </span>
+            <span 
+              class="card" 
+              [class.red]="formatCard(player.holeCard2).isRed"
+              data-cy="hole-card-2">
+              {{ formatCard(player.holeCard2).symbol }}
+            </span>
+          </div>
+          <div class="hole-cards hidden" 
+               *ngIf="!showCards() && !replayState.isComplete" 
+               data-cy="hole-cards-hidden">
+            <span class="card card-back">🂠</span>
+            <span class="card card-back">🂠</span>
+          </div>
+
+          
+          <div class="last-action" 
+               *ngIf="player.lastAction && isActivePlayer(player)"
+               [@actionPop]
+               data-cy="player-last-action">
+            {{ player.lastAction }}
+          </div>
+
+          
+          <div class="player-status" *ngIf="player.folded" data-cy="player-status-folded">
+            FOLDED
+          </div>
+        </div>
+      </div>
+
+      
+      <div class="current-action" 
+           *ngIf="replayState.currentAction" 
+           [@actionPop]
+           data-cy="current-action-display">
+        <div class="action-text" 
+             [ngClass]="getActionClass(replayState.currentAction)" 
+             data-cy="action-text">
+          {{ formatAction(replayState.currentAction) }}
+        </div>
+      </div>
+
+      
+      <div class="winner-display" 
+           *ngIf="replayState.isComplete" 
+           [@winner]
+           data-cy="winner-display">
+        <div class="winner-text" data-cy="winner-text">
+          🏆 {{ replay.winnerName }} wins ${{ replay.finalPot }}
+        </div>
+        <div class="winning-hand" data-cy="winning-hand-display">
+          {{ replay.winningHand }}
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="analysis-overlay" 
+         *ngIf="showAnalysisOverlay()"
+         [@analysisOverlay]
+         data-cy="analysis-overlay">
+      
+      
+      <app-equity-display 
+        *ngIf="currentEquity()"
+        [equityData]="currentEquity()"
+        [isCompact]="false"
+        data-cy="equity-display-component">
+      </app-equity-display>
+
+      
+      <app-action-analysis 
+        *ngIf="currentActionAnalysis()"
+        [analysisData]="currentActionAnalysis()"
+        data-cy="action-analysis-component">
+      </app-action-analysis>
+    </div>
+  </div>
+
+  
+  <aside class="action-timeline" data-cy="action-timeline">
+    <h4 data-cy="timeline-title">Action History</h4>
+    <div class="timeline-scroll" data-cy="timeline-scroll" role="list">
+      <div
+        *ngFor="let action of getActionsUpToIndex(); let i = index"
+        class="timeline-item"
+        [ngClass]="getActionClass(action)"
+        [class.current]="i === replayState.actionIndex - 1"
+        (click)="goToStep(i + 1)"
+        (keydown.enter)="goToStep(i + 1)"
+        [@timelineItem]
+        [attr.data-cy]="'timeline-item-' + i"
+        data-cy="timeline-item"
+        role="listitem"
+        tabindex="0">
+        <span class="timeline-index" data-cy="timeline-index">{{ i + 1 }}</span>
+        <span class="timeline-phase" data-cy="timeline-phase">{{ formatPhase(action.phase) }}</span>
+        <span class="timeline-action" data-cy="timeline-action">{{ formatAction(action) }}</span>
+      </div>
+    </div>
+  </aside>
+
+  
+  <div class="replay-controls" data-cy="replay-controls">
+    
+    <div class="progress-bar" 
+         data-cy="progress-bar" 
+         role="progressbar" 
+         [attr.aria-valuenow]="getProgressPercentage()" 
+         aria-valuemin="0" 
+         aria-valuemax="100">
+      <div 
+        class="progress-fill" 
+        [style.width.%]="getProgressPercentage()"
+        data-cy="progress-fill">
+      </div>
+      <span class="progress-text" data-cy="progress-text">
+        {{ replayState.actionIndex }} / {{ replay.actions.length }}
+      </span>
+    </div>
+
+    
+    <div class="control-buttons" data-cy="control-buttons">
+      <button class="btn btn-sm" 
+              (click)="goToStart()" 
+              title="Go to start" 
+              data-cy="start-btn" 
+              type="button"
+              aria-label="Go to start">
+        ⏮️
+      </button>
+      <button class="btn btn-sm" 
+              (click)="stepBack()" 
+              [disabled]="replayState.actionIndex === 0" 
+              title="Step back" 
+              data-cy="prev-btn" 
+              type="button"
+              aria-label="Step back">
+        ⏪
+      </button>
+      <button 
+        class="btn btn-primary play-btn" 
+        (click)="togglePlay()" 
+        [disabled]="replayState.isComplete && !isPlaying()"
+        data-cy="play-pause-btn"
+        type="button"
+        [attr.aria-label]="isPlaying() ? 'Pause' : 'Play'">
+        {{ isPlaying() ? '⏸️ Pause' : '▶️ Play' }}
+      </button>
+      <button class="btn btn-sm" 
+              (click)="stepForward()" 
+              [disabled]="replayState.isComplete" 
+              title="Step forward" 
+              data-cy="next-btn" 
+              type="button"
+              aria-label="Step forward">
+        ⏩
+      </button>
+      <button class="btn btn-sm" 
+              (click)="goToEnd()" 
+              title="Go to end" 
+              data-cy="end-btn" 
+              type="button"
+              aria-label="Go to end">
+        ⏭️
+      </button>
+    </div>
+
+    
+    <div class="scrubber-container" data-cy="scrubber-container">
+      <input type="range" 
+             class="scrubber"
+             [min]="0"
+             [max]="totalSteps()"
+             [value]="currentStep()"
+             (input)="goToStep($any($event.target).value)"
+             data-cy="scrubber-input"
+             aria-label="Timeline scrubber">
+    </div>
+
+    
+    <div class="control-options" data-cy="control-options">
+      
+      <label class="speed-control" data-cy="speed-control">
+        <span class="label-text">Speed:</span>
+        <select [(ngModel)]="playbackSpeed" 
+                data-cy="speed-select" 
+                aria-label="Playback speed">
+          <option [value]="0.5">0.5x</option>
+          <option [value]="1">1x</option>
+          <option [value]="2">2x</option>
+          <option [value]="4">4x</option>
+        </select>
+      </label>
+
+      
+      <label class="toggle-option" data-cy="show-cards-toggle">
+        <input type="checkbox" 
+               [checked]="showCards()"
+               (change)="toggleCards()"
+               data-cy="show-cards-checkbox">
+        <span class="toggle-label">Show Cards</span>
+      </label>
+
+      
+      <label class="toggle-option analysis-toggle" data-cy="analysis-toggle">
+        <input type="checkbox" 
+               [(ngModel)]="showAnalysis"
+               data-cy="analysis-checkbox">
+        <span class="toggle-label">📊 Analysis</span>
+      </label>
+    </div>
+  </div>
+</div>
+
+
+<div class="loading" *ngIf="isLoading()" data-cy="loading-state">
+  <div class="spinner" data-cy="spinner"></div>
+  <span>Loading hand history...</span>
+</div>
+
+
+<div class="error" *ngIf="error()" data-cy="error-state" role="alert">
+  <span class="error-icon">⚠️</span>
+  <span data-cy="error-message">{{ error() }}</span>
+  <button class="btn btn-sm" (click)="loadReplay()" data-cy="retry-btn" type="button">Retry</button>
+</div>
+
+
+<div class="no-data" *ngIf="!isLoading() && !error() && !replay" data-cy="no-data-state">
+  <span data-cy="no-data-message">No hand history loaded</span>
+</div>
