@@ -1,0 +1,46 @@
+<div class="notification-container">
+  <div 
+    *ngFor="let error of errors$ | async; trackBy: trackByErrorId"
+    class="notification"
+    [class]="'notification--' + error.type"
+    [@slideInOut]
+    (click)="dismissError(error.id)"
+    (keyup.enter)="dismissError(error.id)"
+    (keyup.space)="dismissError(error.id)"
+    tabindex="0"
+    role="button"
+    [attr.aria-label]="'Dismiss ' + error.type + ' notification: ' + error.message"
+  >
+    <div class="notification__icon">
+      <i [class]="getIconClass(error.type)"></i>
+    </div>
+    
+    <div class="notification__content">
+      <div class="notification__message">
+        {{ error.message }}
+      </div>
+      <div *ngIf="error.details" class="notification__details">
+        {{ error.details }}
+      </div>
+      <div class="notification__timestamp">
+        {{ error.timestamp | date:'short' }}
+      </div>
+    </div>
+    
+    <button 
+      *ngIf="error.dismissible"
+      class="notification__close"
+      (click)="dismissError(error.id); $event.stopPropagation()"
+      aria-label="Dismiss notification"
+    >
+      <i class="fas fa-times"></i>
+    </button>
+    
+    <!-- Progress bar for auto-dismiss -->
+    <div 
+      *ngIf="error.type === 'success' || error.type === 'info'"
+      class="notification__progress"
+      [style.animation-duration]="getAutoDismissTime(error.type) + 'ms'"
+    ></div>
+  </div>
+</div>
