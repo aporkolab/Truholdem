@@ -1,0 +1,165 @@
+{
+  "game": {
+    "id": "test-game-123",
+    "currentPot": 100,
+    "players": [
+      {
+        "id": "player-1",
+        "name": "TestPlayer",
+        "chips": 980,
+        "betAmount": 20,
+        "folded": false,
+        "isBot": false,
+        "isAllIn": false,
+        "hasActed": false,
+        "seatPosition": 0,
+        "hand": [
+          { "suit": "HEARTS", "value": "ACE" },
+          { "suit": "SPADES", "value": "ACE" }
+        ]
+      },
+      {
+        "id": "bot-1",
+        "name": "Bot1",
+        "chips": 990,
+        "betAmount": 10,
+        "folded": false,
+        "isBot": true,
+        "isAllIn": false,
+        "hasActed": true,
+        "seatPosition": 1,
+        "hand": []
+      },
+      {
+        "id": "bot-2",
+        "name": "Bot2",
+        "chips": 970,
+        "betAmount": 0,
+        "folded": false,
+        "isBot": true,
+        "isAllIn": false,
+        "hasActed": false,
+        "seatPosition": 2,
+        "hand": []
+      }
+    ],
+    "communityCards": [],
+    "phase": "PRE_FLOP",
+    "currentBet": 20,
+    "currentPlayerIndex": 0,
+    "dealerPosition": 2,
+    "smallBlindPosition": 0,
+    "bigBlindPosition": 1,
+    "minRaiseAmount": 20,
+    "bigBlind": 20,
+    "smallBlind": 10
+  },
+  "flopGame": {
+    "id": "test-game-123",
+    "currentPot": 200,
+    "phase": "FLOP",
+    "communityCards": [
+      { "suit": "HEARTS", "value": "ACE" },
+      { "suit": "CLUBS", "value": "KING" },
+      { "suit": "DIAMONDS", "value": "TEN" }
+    ],
+    "currentBet": 0,
+    "currentPlayerIndex": 0
+  },
+  "showdownGame": {
+    "id": "test-game-123",
+    "currentPot": 500,
+    "phase": "SHOWDOWN",
+    "communityCards": [
+      { "suit": "HEARTS", "value": "ACE" },
+      { "suit": "CLUBS", "value": "KING" },
+      { "suit": "DIAMONDS", "value": "TEN" },
+      { "suit": "SPADES", "value": "TWO" },
+      { "suit": "HEARTS", "value": "SEVEN" }
+    ],
+    "winner": {
+      "name": "TestPlayer",
+      "handDescription": "Pair of Aces"
+    }
+  },
+  "playerStats": {
+    "id": "stats-123",
+    "playerName": "TestPlayer",
+    "handsPlayed": 100,
+    "handsWon": 25,
+    "totalWinnings": 5000,
+    "totalLosses": 3000,
+    "biggestPotWon": 500,
+    "longestWinStreak": 5,
+    "currentStreak": 2,
+    "vpipHands": 40,
+    "pfrHands": 20,
+    "totalBets": 50,
+    "totalRaises": 30,
+    "totalCalls": 80,
+    "totalFolds": 60,
+    "totalChecks": 40,
+    "handsWentToShowdown": 30,
+    "showdownsWon": 15
+  },
+  "handHistory": {
+    "id": "history-123",
+    "gameId": "test-game-123",
+    "handNumber": 1,
+    "playedAt": "2024-01-15T10:30:00Z",
+    "smallBlind": 10,
+    "bigBlind": 20,
+    "dealerPosition": 0,
+    "winnerName": "TestPlayer",
+    "winningHandDescription": "Pair of Aces",
+    "finalPot": 150,
+    "players": [
+      {
+        "playerId": "player-1",
+        "playerName": "TestPlayer",
+        "startingChips": 1000,
+        "seatPosition": 0,
+        "holeCard1Suit": "HEARTS",
+        "holeCard1Value": "ACE",
+        "holeCard2Suit": "SPADES",
+        "holeCard2Value": "ACE"
+      },
+      {
+        "playerId": "bot-1",
+        "playerName": "Bot1",
+        "startingChips": 1000,
+        "seatPosition": 1,
+        "holeCard1Suit": "CLUBS",
+        "holeCard1Value": "KING",
+        "holeCard2Suit": "DIAMONDS",
+        "holeCard2Value": "QUEEN"
+      }
+    ],
+    "actions": [
+      { "playerName": "TestPlayer", "action": "RAISE", "amount": 60, "phase": "PRE_FLOP" },
+      { "playerName": "Bot1", "action": "CALL", "amount": 60, "phase": "PRE_FLOP" },
+      { "playerName": "TestPlayer", "action": "BET", "amount": 40, "phase": "FLOP" },
+      { "playerName": "Bot1", "action": "FOLD", "amount": 0, "phase": "FLOP" }
+    ],
+    "board": [
+      { "suit": "HEARTS", "value": "TEN" },
+      { "suit": "CLUBS", "value": "JACK" },
+      { "suit": "DIAMONDS", "value": "TWO" }
+    ]
+  },
+  "leaderboard": {
+    "byWinnings": [
+      { "playerName": "TopPlayer", "totalWinnings": 10000 },
+      { "playerName": "Player2", "totalWinnings": 8000 },
+      { "playerName": "Player3", "totalWinnings": 6000 }
+    ],
+    "byHandsWon": [
+      { "playerName": "WinMaster", "handsWon": 500 },
+      { "playerName": "Player2", "handsWon": 400 }
+    ],
+    "byWinRate": [
+      { "playerName": "Accurate", "winRate": 35.5 },
+      { "playerName": "Player2", "winRate": 30.2 }
+    ]
+  }
+}
