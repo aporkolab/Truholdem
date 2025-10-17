@@ -1,0 +1,27 @@
+# TruHoldem Code Owners
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything
+* @aporkolab
+
+# Backend
+/backend/ @aporkolab
+
+# Frontend
+/frontend/ @aporkolab
+
+# DevOps / Infrastructure
+/.github/ @aporkolab
+/docker/ @aporkolab
+/monitoring/ @aporkolab
+docker-compose*.yml @aporkolab
+Dockerfile @aporkolab
+
+# Documentation
+/docs/ @aporkolab
+*.md @aporkolab
+
+# Configuration
+*.json @aporkolab
+*.yml @aporkolab
+*.yaml @aporkolab
