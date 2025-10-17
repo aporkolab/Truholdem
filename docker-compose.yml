@@ -1,0 +1,186 @@
+services:
+  
+  postgres:
+    image: postgres:16-alpine
+    container_name: truholdem-postgres
+    environment:
+      POSTGRES_DB: truholdem
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d truholdem"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - truholdem-network
+
+  
+  redis:
+    image: redis:7-alpine
+    container_name: truholdem-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - truholdem-network
+
+  
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: truholdem-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_USERNAME: user
+      DB_PASSWORD: password
+      REDIS_HOST: redis
+      JWT_SECRET: your-super-secret-jwt-key-that-should-be-very-long-and-secure-in-production
+      CORS_ORIGINS: http://localhost:4200,http://localhost:3000
+      WEBSOCKET_ORIGINS: http://localhost:4200,http://localhost:3000
+      
+      OTEL_SERVICE_NAME: truholdem-backend
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      OTEL_ENABLED: "true"
+      OTEL_METRICS_EXPORT_INTERVAL: "60000"
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      jaeger:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - truholdem-network
+    volumes:
+      - ./logs:/app/logs
+
+  
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        API_URL: http://localhost:8080/api
+    container_name: truholdem-frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - truholdem-network
+
+  
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: truholdem-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./docker/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - truholdem-network
+
+  
+  grafana:
+    image: grafana/grafana:latest
+    container_name: truholdem-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_USER: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./docker/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+      - jaeger
+    networks:
+      - truholdem-network
+
+  
+  jaeger:
+    image: jaegertracing/all-in-one:1.53
+    container_name: truholdem-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+      SPAN_STORAGE_TYPE: badger
+      BADGER_EPHEMERAL: "false"
+      BADGER_DIRECTORY_VALUE: /badger/data
+      BADGER_DIRECTORY_KEY: /badger/key
+    ports:
+      - "16686:16686"   
+      - "4317:4317"     
+      - "4318:4318"     
+      - "14250:14250"   
+      - "14268:14268"   
+      - "6831:6831/udp" 
+    volumes:
+      - jaeger_data:/badger
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:16686"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - truholdem-network
+
+  
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.96.0
+    container_name: truholdem-otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./monitoring/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4319:4317"     
+      - "8888:8888"     
+      - "8889:8889"     
+    depends_on:
+      - jaeger
+    networks:
+      - truholdem-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+  jaeger_data:
+
+networks:
+  truholdem-network:
+    driver: bridge

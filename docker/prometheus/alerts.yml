@@ -1,0 +1,291 @@
+
+
+
+groups:
+  - name: truholdem-critical
+    rules:
+      
+      
+      
+      
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m])) 
+            / 
+            sum(rate(http_server_requests_seconds_count[5m]))
+          ) * 100 > 5
+        for: 2m
+        labels:
+          severity: critical
+          service: truholdem
+        annotations:
+          summary: "High HTTP 5xx error rate detected"
+          description: "Error rate is {{ $value | printf \"%.2f\" }}% (threshold: 5%). This indicates server-side failures that need immediate attention."
+          runbook_url: "https://runbooks.truholdem.com/high-error-rate"
+          
+      - alert: VeryHighErrorRate
+        expr: |
+          (
+            sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m])) 
+            / 
+            sum(rate(http_server_requests_seconds_count[5m]))
+          ) * 100 > 10
+        for: 1m
+        labels:
+          severity: page
+          service: truholdem
+        annotations:
+          summary: "CRITICAL: Very high HTTP error rate"
+          description: "Error rate is {{ $value | printf \"%.2f\" }}% (threshold: 10%). Immediate investigation required!"
+          
+      - alert: SlowResponseTime
+        expr: |
+          histogram_quantile(0.99, 
+            sum(rate(http_server_requests_seconds_bucket[5m])) by (le)
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: truholdem
+        annotations:
+          summary: "Slow HTTP response time (P99)"
+          description: "P99 response time is {{ $value | printf \"%.2f\" }}s (threshold: 2s). Check for database issues or resource constraints."
+          
+      - alert: VerySlowResponseTime
+        expr: |
+          histogram_quantile(0.99, 
+            sum(rate(http_server_requests_seconds_bucket[5m])) by (le)
+          ) > 5
+        for: 2m
+        labels:
+          severity: critical
+          service: truholdem
+        annotations:
+          summary: "CRITICAL: Very slow HTTP response time"
+          description: "P99 response time is {{ $value | printf \"%.2f\" }}s (threshold: 5s). Application may be effectively down."
+
+      
+      
+      
+      
+      - alert: HighMemoryUsage
+        expr: |
+          (jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: truholdem
+        annotations:
+          summary: "High JVM heap memory usage"
+          description: "Heap usage is {{ $value | printf \"%.1f\" }}% (threshold: 80%). Consider increasing heap size or investigating memory leaks."
+          
+      - alert: CriticalMemoryUsage
+        expr: |
+          (jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) * 100 > 90
+        for: 2m
+        labels:
+          severity: critical
+          service: truholdem
+        annotations:
+          summary: "CRITICAL: JVM heap memory near exhaustion"
+          description: "Heap usage is {{ $value | printf \"%.1f\" }}% (threshold: 90%). OOMKill imminent! Immediate action required."
+          
+      - alert: HighGCPauseTime
+        expr: |
+          rate(jvm_gc_pause_seconds_sum[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: truholdem
+        annotations:
+          summary: "High GC pause time"
+          description: "GC is consuming {{ $value | printf \"%.2f\" }}s per second. This may cause application latency."
+
+      
+      
+      
+      
+      - alert: DatabaseConnectionPoolExhausted
+        expr: hikaricp_connections_pending > 5
+        for: 2m
+        labels:
+          severity: critical
+          service: truholdem
+        annotations:
+          summary: "Database connection pool is exhausted"
+          description: "{{ $value }} threads waiting for database connections. Queries will fail or timeout."
+          
+      - alert: DatabaseConnectionPoolLow
+        expr: |
+          (hikaricp_connections_idle / hikaricp_connections_max) * 100 < 10
+        for: 5m
+        labels:
+          severity: warning
+          service: truholdem
+        annotations:
+          summary: "Database connection pool running low"
+          description: "Only {{ $value | printf \"%.1f\" }}% idle connections remaining. Pool may become exhausted under load."
+          
+      - alert: DatabaseConnectionTimeout
+        expr: |
+          rate(hikaricp_connections_timeout_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          service: truholdem
+        annotations:
+          summary: "Database connection timeouts occurring"
+          description: "{{ $value | printf \"%.2f\" }} connection timeouts per second. Database may be overloaded or unreachable."
+
+      
+      
+      
+      
+      - alert: LowCacheHitRate
+        expr: |
+          (
+            sum(rate(cache_gets_total{result="hit"}[5m])) 
+            / 
+            sum(rate(cache_gets_total[5m]))
+          ) * 100 < 70
+        for: 10m
+        labels:
+          severity: warning
+          service: truholdem
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate is {{ $value | printf \"%.1f\" }}% (threshold: 70%). This increases database load."
+          
+      - alert: CacheDown
+        expr: |
+          up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: truholdem
+        annotations:
+          summary: "Redis cache is down"
+          description: "Redis is not responding. Application performance will be severely degraded."
+
+      
+      
+      
+      
+      - alert: SlowBotDecisions
+        expr: |
+          histogram_quantile(0.95, 
+            rate(truholdem_bot_decision_time_bucket[5m])
+          ) > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: truholdem
+        annotations:
+          summary: "Bot decision time is slow"
+          description: "P95 bot decision time is {{ $value | printf \"%.0f\" }}ms (threshold: 1000ms). Game experience may be affected."
+          
+      - alert: HighGameCreationTime
+        expr: |
+          histogram_quantile(0.95, 
+            rate(truholdem_game_creation_time_bucket[5m])
+          ) > 5000
+        for: 5m
+        labels:
+          severity: warning
+          service: truholdem
+        annotations:
+          summary: "Game creation is slow"
+          description: "P95 game creation time is {{ $value | printf \"%.0f\" }}ms (threshold: 5000ms). Users may experience delays."
+          
+      - alert: NoActiveGames
+        expr: |
+          truholdem_games_active == 0 and truholdem_players_active > 0
+        for: 10m
+        labels:
+          severity: warning
+          service: truholdem
+        annotations:
+          summary: "Active players but no games"
+          description: "There are active players but no games running. Possible game creation issue."
+
+      
+      
+      
+      
+      - alert: ServiceDown
+        expr: up{job="truholdem-backend"} == 0
+        for: 1m
+        labels:
+          severity: page
+          service: truholdem
+        annotations:
+          summary: "TruHoldem backend is DOWN"
+          description: "The backend service is not responding to health checks. Immediate investigation required!"
+          
+      - alert: HighCPUUsage
+        expr: process_cpu_usage * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: truholdem
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value | printf \"%.1f\" }}% (threshold: 80%). Consider scaling or optimization."
+          
+      - alert: TooManyOpenFiles
+        expr: |
+          process_files_open_files / process_files_max_files * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: truholdem
+        annotations:
+          summary: "High file descriptor usage"
+          description: "{{ $value | printf \"%.1f\" }}% of file descriptors used. May cause connection failures."
+          
+      - alert: HighThreadCount
+        expr: jvm_threads_live_threads > 300
+        for: 5m
+        labels:
+          severity: warning
+          service: truholdem
+        annotations:
+          summary: "High JVM thread count"
+          description: "{{ $value }} live threads (threshold: 300). Possible thread leak or excessive concurrency."
+
+  - name: truholdem-availability
+    rules:
+      
+      
+      
+      
+      - alert: AvailabilityBelowSLA
+        expr: |
+          (
+            1 - (
+              sum(rate(http_server_requests_seconds_count{status=~"5.."}[1h])) 
+              / 
+              sum(rate(http_server_requests_seconds_count[1h]))
+            )
+          ) * 100 < 99.5
+        for: 5m
+        labels:
+          severity: critical
+          service: truholdem
+        annotations:
+          summary: "Service availability below SLA"
+          description: "Availability is {{ $value | printf \"%.2f\" }}% (SLA: 99.5%). Investigate immediately."
+          
+      - alert: HighRequestLatency
+        expr: |
+          histogram_quantile(0.50, 
+            sum(rate(http_server_requests_seconds_bucket[5m])) by (le)
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: truholdem
+        annotations:
+          summary: "Elevated median response latency"
+          description: "P50 latency is {{ $value | printf \"%.2f\" }}s (threshold: 500ms). User experience is degraded."
