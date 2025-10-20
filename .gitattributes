@@ -1,0 +1,46 @@
+# Git Attributes for TruHoldem
+# https://git-scm.com/docs/gitattributes
+
+# Default behavior
+* text=auto eol=lf
+
+# Explicitly declare text files
+*.java text
+*.ts text
+*.tsx text
+*.js text
+*.jsx text
+*.json text
+*.xml text
+*.yml text
+*.yaml text
+*.html text
+*.css text
+*.scss text
+*.md text
+*.sh text eol=lf
+*.properties text
+*.sql text
+
+# Declare binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.jar binary
+*.war binary
+
+# Shell scripts must have LF endings
+*.sh text eol=lf
+.husky/* text eol=lf
+
+# Windows batch files must have CRLF endings
+*.bat text eol=crlf
+*.cmd text eol=crlf
+mvnw.cmd text eol=crlf
+
+# Linguist overrides for GitHub stats
+*.sql linguist-detectable=false
+*.json linguist-detectable=false
+/docs/** linguist-documentation
