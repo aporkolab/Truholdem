@@ -369,7 +369,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 For support, questions, or contributions:
 
 - **Email**: [adam.porkolab@example.com](mailto:adam.porkolab@example.com)
-- **Website**: [www.adamporkolab.hu](https://www.adamporkolab.hu)
+- **Website**: [www.adamaporkolab.com](https://www.adamaporkolab.com)
 - **Issues**: [GitHub Issues](https://github.com/APorkolab/Truholdem/issues)
 
 ---

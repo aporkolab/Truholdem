@@ -12,7 +12,7 @@
     "lint": "ng lint"
   },
   "private": true,
-  "homepage": "https://www.truholdem.porkolab.hu",
+  "homepage": "https://www.truholdem.aporkolab.com",
   "dependencies": {
     "@angular/animations": "^20.2.1",
     "@angular/cli": "^20.1.5",
