@@ -114,4 +114,4 @@ This project is licensed under the MIT License.
 
 ## Author
 
-Truholdem is developed and maintained by [Adam Dr. Porkolab](https://github.com/APorkolab). The another projects of the author may access on [www.adamaporkolab.com](https://www.adamaporkolab.com). For any questions or inquiries, please open an issue on the repository or contact the author directly.
+Truholdem is developed and maintained by [Adam Dr. Porkolab](https://github.com/APorkolab). The another projects of the author may access on [www.aporkolab.com](https://www.aporkolab.com). For any questions or inquiries, please open an issue on the repository or contact the author directly.
