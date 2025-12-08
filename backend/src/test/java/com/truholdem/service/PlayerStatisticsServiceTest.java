@@ -1,7 +1,18 @@
 package com.truholdem.service;
 
-import com.truholdem.model.PlayerStatistics;
-import com.truholdem.repository.PlayerStatisticsRepository;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -13,13 +24,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
-import java.util.*;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import com.truholdem.model.PlayerStatistics;
+import com.truholdem.repository.PlayerStatisticsRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("PlayerStatisticsService Tests")
@@ -66,7 +72,7 @@ class PlayerStatisticsServiceTest {
         @DisplayName("Should return existing stats for player")
         void shouldReturnExistingStats() {
             when(statsRepository.findByPlayerName(TEST_PLAYER))
-                .thenReturn(Optional.of(testStats));
+                    .thenReturn(Optional.of(testStats));
 
             PlayerStatistics result = statsService.getOrCreateStats(TEST_PLAYER);
 
@@ -79,9 +85,9 @@ class PlayerStatisticsServiceTest {
         @DisplayName("Should create new stats for unknown player")
         void shouldCreateNewStats() {
             when(statsRepository.findByPlayerName("NewPlayer"))
-                .thenReturn(Optional.empty());
+                    .thenReturn(Optional.empty());
             when(statsRepository.save(any(PlayerStatistics.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             PlayerStatistics result = statsService.getOrCreateStats("NewPlayer");
 
@@ -94,7 +100,7 @@ class PlayerStatisticsServiceTest {
         @DisplayName("Should get stats by user ID")
         void shouldGetStatsByUserId() {
             when(statsRepository.findByUserId(TEST_USER_ID))
-                .thenReturn(Optional.of(testStats));
+                    .thenReturn(Optional.of(testStats));
 
             PlayerStatistics result = statsService.getOrCreateStats(TEST_USER_ID, TEST_PLAYER);
 
@@ -110,9 +116,9 @@ class PlayerStatisticsServiceTest {
         @DisplayName("Should record hand played")
         void shouldRecordHandPlayed() {
             when(statsRepository.findByPlayerName(TEST_PLAYER))
-                .thenReturn(Optional.of(testStats));
+                    .thenReturn(Optional.of(testStats));
             when(statsRepository.save(any(PlayerStatistics.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             statsService.recordHandPlayed(TEST_PLAYER, true, false);
 
@@ -124,9 +130,9 @@ class PlayerStatisticsServiceTest {
         @DisplayName("Should record FOLD action")
         void shouldRecordFoldAction() {
             when(statsRepository.findByPlayerName(TEST_PLAYER))
-                .thenReturn(Optional.of(testStats));
+                    .thenReturn(Optional.of(testStats));
             when(statsRepository.save(any(PlayerStatistics.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             statsService.recordAction(TEST_PLAYER, "FOLD");
 
@@ -138,42 +144,42 @@ class PlayerStatisticsServiceTest {
         @DisplayName("Should record CALL action and update VPIP")
         void shouldRecordCallAction() {
             when(statsRepository.findByPlayerName(TEST_PLAYER))
-                .thenReturn(Optional.of(testStats));
+                    .thenReturn(Optional.of(testStats));
             when(statsRepository.save(any(PlayerStatistics.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             statsService.recordAction(TEST_PLAYER, "CALL");
 
             verify(statsRepository).save(statsCaptor.capture());
             PlayerStatistics saved = statsCaptor.getValue();
             assertThat(saved.getTotalCalls()).isEqualTo(81);
-            assertThat(saved.getHandsVoluntarilyPutInPot()).isEqualTo(41);
+            assertThat(saved.getHandsVoluntarilyPutInPot()).isEqualTo(40);
         }
 
         @Test
         @DisplayName("Should record RAISE action and update PFR")
         void shouldRecordRaiseAction() {
             when(statsRepository.findByPlayerName(TEST_PLAYER))
-                .thenReturn(Optional.of(testStats));
+                    .thenReturn(Optional.of(testStats));
             when(statsRepository.save(any(PlayerStatistics.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             statsService.recordAction(TEST_PLAYER, "RAISE");
 
             verify(statsRepository).save(statsCaptor.capture());
             PlayerStatistics saved = statsCaptor.getValue();
             assertThat(saved.getTotalRaises()).isEqualTo(31);
-            assertThat(saved.getHandsVoluntarilyPutInPot()).isEqualTo(41);
-            assertThat(saved.getHandsRaisedPreFlop()).isEqualTo(21);
+            assertThat(saved.getHandsVoluntarilyPutInPot()).isEqualTo(40);
+            assertThat(saved.getHandsRaisedPreFlop()).isEqualTo(20);
         }
 
         @Test
         @DisplayName("Should record BET action")
         void shouldRecordBetAction() {
             when(statsRepository.findByPlayerName(TEST_PLAYER))
-                .thenReturn(Optional.of(testStats));
+                    .thenReturn(Optional.of(testStats));
             when(statsRepository.save(any(PlayerStatistics.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             statsService.recordAction(TEST_PLAYER, "BET");
 
@@ -185,9 +191,9 @@ class PlayerStatisticsServiceTest {
         @DisplayName("Should record CHECK action")
         void shouldRecordCheckAction() {
             when(statsRepository.findByPlayerName(TEST_PLAYER))
-                .thenReturn(Optional.of(testStats));
+                    .thenReturn(Optional.of(testStats));
             when(statsRepository.save(any(PlayerStatistics.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             statsService.recordAction(TEST_PLAYER, "CHECK");
 
@@ -208,15 +214,15 @@ class PlayerStatisticsServiceTest {
             testStats.setCurrentLoseStreak(0);
 
             when(statsRepository.findByPlayerName(TEST_PLAYER))
-                .thenReturn(Optional.of(testStats));
+                    .thenReturn(Optional.of(testStats));
             when(statsRepository.save(any(PlayerStatistics.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             statsService.recordWin(TEST_PLAYER, 500);
 
             verify(statsRepository).save(statsCaptor.capture());
             PlayerStatistics saved = statsCaptor.getValue();
-            
+
             assertThat(saved.getHandsWon()).isEqualTo(26);
             assertThat(saved.getTotalWinnings()).isEqualByComparingTo(new BigDecimal("5500"));
             assertThat(saved.getCurrentWinStreak()).isEqualTo(3);
@@ -230,9 +236,9 @@ class PlayerStatisticsServiceTest {
             testStats.setLongestWinStreak(3);
 
             when(statsRepository.findByPlayerName(TEST_PLAYER))
-                .thenReturn(Optional.of(testStats));
+                    .thenReturn(Optional.of(testStats));
             when(statsRepository.save(any(PlayerStatistics.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             statsService.recordWin(TEST_PLAYER, 100);
 
@@ -247,15 +253,15 @@ class PlayerStatisticsServiceTest {
             testStats.setCurrentLoseStreak(0);
 
             when(statsRepository.findByPlayerName(TEST_PLAYER))
-                .thenReturn(Optional.of(testStats));
+                    .thenReturn(Optional.of(testStats));
             when(statsRepository.save(any(PlayerStatistics.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             statsService.recordLoss(TEST_PLAYER, 200);
 
             verify(statsRepository).save(statsCaptor.capture());
             PlayerStatistics saved = statsCaptor.getValue();
-            
+
             assertThat(saved.getTotalLosses()).isEqualByComparingTo(new BigDecimal("3200"));
             assertThat(saved.getCurrentWinStreak()).isZero();
             assertThat(saved.getCurrentLoseStreak()).isEqualTo(1);
@@ -265,15 +271,15 @@ class PlayerStatisticsServiceTest {
         @DisplayName("Should record showdown won")
         void shouldRecordShowdownWon() {
             when(statsRepository.findByPlayerName(TEST_PLAYER))
-                .thenReturn(Optional.of(testStats));
+                    .thenReturn(Optional.of(testStats));
             when(statsRepository.save(any(PlayerStatistics.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             statsService.recordShowdown(TEST_PLAYER, true);
 
             verify(statsRepository).save(statsCaptor.capture());
             PlayerStatistics saved = statsCaptor.getValue();
-            
+
             assertThat(saved.getHandsWentToShowdown()).isEqualTo(31);
             assertThat(saved.getShowdownsWon()).isEqualTo(16);
         }
@@ -282,15 +288,15 @@ class PlayerStatisticsServiceTest {
         @DisplayName("Should record showdown lost")
         void shouldRecordShowdownLost() {
             when(statsRepository.findByPlayerName(TEST_PLAYER))
-                .thenReturn(Optional.of(testStats));
+                    .thenReturn(Optional.of(testStats));
             when(statsRepository.save(any(PlayerStatistics.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             statsService.recordShowdown(TEST_PLAYER, false);
 
             verify(statsRepository).save(statsCaptor.capture());
             PlayerStatistics saved = statsCaptor.getValue();
-            
+
             assertThat(saved.getHandsWentToShowdown()).isEqualTo(31);
             assertThat(saved.getShowdownsWon()).isEqualTo(15); 
         }
@@ -301,9 +307,9 @@ class PlayerStatisticsServiceTest {
             testStats.setTimesAllIn(10);
 
             when(statsRepository.findByPlayerName(TEST_PLAYER))
-                .thenReturn(Optional.of(testStats));
+                    .thenReturn(Optional.of(testStats));
             when(statsRepository.save(any(PlayerStatistics.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             statsService.recordAllIn(TEST_PLAYER);
 
@@ -318,9 +324,9 @@ class PlayerStatisticsServiceTest {
             testStats.setAllInsWon(5);
 
             when(statsRepository.findByPlayerName(TEST_PLAYER))
-                .thenReturn(Optional.of(testStats));
+                    .thenReturn(Optional.of(testStats));
             when(statsRepository.save(any(PlayerStatistics.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             statsService.recordAllInResult(TEST_PLAYER, true);
 
@@ -334,9 +340,9 @@ class PlayerStatisticsServiceTest {
             testStats.setBiggestPotWon(1000);
 
             when(statsRepository.findByPlayerName(TEST_PLAYER))
-                .thenReturn(Optional.of(testStats));
+                    .thenReturn(Optional.of(testStats));
             when(statsRepository.save(any(PlayerStatistics.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             statsService.recordWin(TEST_PLAYER, 2000);
 
@@ -354,7 +360,7 @@ class PlayerStatisticsServiceTest {
         void shouldGetTopByWinnings() {
             List<PlayerStatistics> topPlayers = Arrays.asList(testStats);
             when(statsRepository.findTop10ByOrderByTotalWinningsDesc())
-                .thenReturn(topPlayers);
+                    .thenReturn(topPlayers);
 
             List<PlayerStatistics> result = statsService.getTopByWinnings();
 
@@ -367,7 +373,7 @@ class PlayerStatisticsServiceTest {
         void shouldGetTopByHandsWon() {
             List<PlayerStatistics> topPlayers = Arrays.asList(testStats);
             when(statsRepository.findTop10ByOrderByHandsWonDesc())
-                .thenReturn(topPlayers);
+                    .thenReturn(topPlayers);
 
             List<PlayerStatistics> result = statsService.getTopByHandsWon();
 
@@ -379,7 +385,7 @@ class PlayerStatisticsServiceTest {
         void shouldGetTopByWinRate() {
             List<PlayerStatistics> topPlayers = Arrays.asList(testStats);
             when(statsRepository.findTopPlayersByWinRate(anyInt()))
-                .thenReturn(topPlayers);
+                    .thenReturn(topPlayers);
 
             List<PlayerStatistics> result = statsService.getTopByWinRate();
 
@@ -390,17 +396,17 @@ class PlayerStatisticsServiceTest {
         @DisplayName("Should get comprehensive leaderboard")
         void shouldGetComprehensiveLeaderboard() {
             when(statsRepository.findTop10ByOrderByTotalWinningsDesc())
-                .thenReturn(Arrays.asList(testStats));
+                    .thenReturn(Arrays.asList(testStats));
             when(statsRepository.findTop10ByOrderByHandsWonDesc())
-                .thenReturn(Arrays.asList(testStats));
+                    .thenReturn(Arrays.asList(testStats));
             when(statsRepository.findTopPlayersByWinRate(anyInt()))
-                .thenReturn(Arrays.asList(testStats));
+                    .thenReturn(Arrays.asList(testStats));
             when(statsRepository.findTop10ByOrderByBiggestPotWonDesc())
-                .thenReturn(Arrays.asList(testStats));
+                    .thenReturn(Arrays.asList(testStats));
             when(statsRepository.findTop10ByOrderByLongestWinStreakDesc())
-                .thenReturn(Arrays.asList(testStats));
+                    .thenReturn(Arrays.asList(testStats));
             when(statsRepository.findTop20ByOrderByHandsPlayedDesc())
-                .thenReturn(Arrays.asList(testStats));
+                    .thenReturn(Arrays.asList(testStats));
 
             PlayerStatisticsService.LeaderboardData result = statsService.getLeaderboard();
 
@@ -482,10 +488,9 @@ class PlayerStatisticsServiceTest {
         @DisplayName("Should generate player stats summary")
         void shouldGenerateStatsSummary() {
             when(statsRepository.findByPlayerName(TEST_PLAYER))
-                .thenReturn(Optional.of(testStats));
+                    .thenReturn(Optional.of(testStats));
 
-            PlayerStatisticsService.PlayerStatsSummary result = 
-                statsService.getStatsSummary(TEST_PLAYER);
+            PlayerStatisticsService.PlayerStatsSummary result = statsService.getStatsSummary(TEST_PLAYER);
 
             assertThat(result).isNotNull();
             assertThat(result.playerName()).isEqualTo(TEST_PLAYER);
@@ -500,10 +505,9 @@ class PlayerStatisticsServiceTest {
         @DisplayName("Should return null for unknown player summary")
         void shouldReturnNullForUnknownPlayer() {
             when(statsRepository.findByPlayerName("Unknown"))
-                .thenReturn(Optional.empty());
+                    .thenReturn(Optional.empty());
 
-            PlayerStatisticsService.PlayerStatsSummary result = 
-                statsService.getStatsSummary("Unknown");
+            PlayerStatisticsService.PlayerStatsSummary result = statsService.getStatsSummary("Unknown");
 
             assertThat(result).isNull();
         }

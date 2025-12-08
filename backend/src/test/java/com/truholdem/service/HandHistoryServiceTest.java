@@ -1,7 +1,19 @@
 package com.truholdem.service;
 
-import com.truholdem.model.*;
-import com.truholdem.repository.HandHistoryRepository;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -16,12 +28,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
-import java.time.LocalDateTime;
-import java.util.*;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import com.truholdem.model.Card;
+import com.truholdem.model.Game;
+import com.truholdem.model.GamePhase;
+import com.truholdem.model.HandHistory;
+import com.truholdem.model.Player;
+import com.truholdem.model.PlayerAction;
+import com.truholdem.model.Suit;
+import com.truholdem.model.Value;
+import com.truholdem.repository.HandHistoryRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("HandHistoryService Tests")
@@ -77,16 +92,14 @@ class HandHistoryServiceTest {
 
             
             handHistoryService.recordAction(
-                testGame.getId(), player1, PlayerAction.CALL, 20, GamePhase.PRE_FLOP
-            );
+                    testGame.getId(), player1, PlayerAction.CALL, 20, GamePhase.PRE_FLOP);
 
             
             when(handHistoryRepository.save(any(HandHistory.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             handHistoryService.finishRecording(
-                testGame.getId(), "Alice", "Pair of Aces", 100
-            );
+                    testGame.getId(), "Alice", "Pair of Aces", 100);
 
             verify(handHistoryRepository).save(handHistoryCaptor.capture());
             HandHistory saved = handHistoryCaptor.getValue();
@@ -105,30 +118,26 @@ class HandHistoryServiceTest {
 
             
             handHistoryService.recordAction(
-                testGame.getId(), player1, PlayerAction.RAISE, 60, GamePhase.PRE_FLOP
-            );
+                    testGame.getId(), player1, PlayerAction.RAISE, 60, GamePhase.PRE_FLOP);
             handHistoryService.recordAction(
-                testGame.getId(), player2, PlayerAction.CALL, 60, GamePhase.PRE_FLOP
-            );
+                    testGame.getId(), player2, PlayerAction.CALL, 60, GamePhase.PRE_FLOP);
             handHistoryService.recordAction(
-                testGame.getId(), player1, PlayerAction.BET, 100, GamePhase.FLOP
-            );
+                    testGame.getId(), player1, PlayerAction.BET, 100, GamePhase.FLOP);
 
             when(handHistoryRepository.save(any(HandHistory.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             handHistoryService.finishRecording(
-                testGame.getId(), "Alice", "Two Pair", 220
-            );
+                    testGame.getId(), "Alice", "Two Pair", 220);
 
             verify(handHistoryRepository).save(handHistoryCaptor.capture());
             HandHistory saved = handHistoryCaptor.getValue();
 
             assertThat(saved.getActions()).hasSize(3);
-            assertThat(saved.getActions().get(0).getAction()).isEqualTo("RAISE");
-            assertThat(saved.getActions().get(0).getAmount()).isEqualTo(60);
-            assertThat(saved.getActions().get(1).getPlayerName()).isEqualTo("Bob");
-            assertThat(saved.getActions().get(2).getPhase()).isEqualTo("FLOP");
+            assertThat(saved.getActions().get(0).action()).isEqualTo("RAISE");
+            assertThat(saved.getActions().get(0).amount()).isEqualTo(60);
+            assertThat(saved.getActions().get(1).playerName()).isEqualTo("Bob");
+            assertThat(saved.getActions().get(2).phase()).isEqualTo("FLOP");
         }
 
         @Test
@@ -137,26 +146,24 @@ class HandHistoryServiceTest {
             handHistoryService.startRecording(testGame);
 
             List<Card> communityCards = Arrays.asList(
-                new Card(Suit.DIAMONDS, Value.TEN),
-                new Card(Suit.CLUBS, Value.NINE),
-                new Card(Suit.HEARTS, Value.EIGHT),
-                new Card(Suit.SPADES, Value.SEVEN),
-                new Card(Suit.DIAMONDS, Value.SIX)
-            );
+                    new Card(Suit.DIAMONDS, Value.TEN),
+                    new Card(Suit.CLUBS, Value.NINE),
+                    new Card(Suit.HEARTS, Value.EIGHT),
+                    new Card(Suit.SPADES, Value.SEVEN),
+                    new Card(Suit.DIAMONDS, Value.SIX));
 
             handHistoryService.recordCommunityCards(testGame.getId(), communityCards);
 
             when(handHistoryRepository.save(any(HandHistory.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             handHistoryService.finishRecording(
-                testGame.getId(), "Alice", "Straight", 500
-            );
+                    testGame.getId(), "Alice", "Straight", 500);
 
             verify(handHistoryRepository).save(handHistoryCaptor.capture());
             HandHistory saved = handHistoryCaptor.getValue();
 
-            assertThat(saved.getCommunityCards()).hasSize(5);
+            assertThat(saved.getBoard()).hasSize(5);
         }
 
         @Test
@@ -165,11 +172,8 @@ class HandHistoryServiceTest {
             UUID nonExistentId = UUID.randomUUID();
 
             
-            assertThatCode(() -> 
-                handHistoryService.recordAction(
-                    nonExistentId, player1, PlayerAction.FOLD, 0, GamePhase.PRE_FLOP
-                )
-            ).doesNotThrowAnyException();
+            assertThatCode(() -> handHistoryService.recordAction(
+                    nonExistentId, player1, PlayerAction.FOLD, 0, GamePhase.PRE_FLOP)).doesNotThrowAnyException();
         }
 
         @Test
@@ -178,11 +182,10 @@ class HandHistoryServiceTest {
             handHistoryService.startRecording(testGame);
 
             when(handHistoryRepository.save(any(HandHistory.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             handHistoryService.finishRecording(
-                testGame.getId(), "Alice", "Royal Flush", 10000
-            );
+                    testGame.getId(), "Alice", "Royal Flush", 10000);
 
             verify(handHistoryRepository).save(handHistoryCaptor.capture());
             HandHistory saved = handHistoryCaptor.getValue();
@@ -205,7 +208,7 @@ class HandHistoryServiceTest {
             HandHistory history = createTestHistory(historyId);
 
             when(handHistoryRepository.findById(historyId))
-                .thenReturn(Optional.of(history));
+                    .thenReturn(Optional.of(history));
 
             Optional<HandHistory> result = handHistoryService.getHandHistory(historyId);
 
@@ -218,13 +221,12 @@ class HandHistoryServiceTest {
         void shouldGetGameHistory() {
             UUID gameId = UUID.randomUUID();
             List<HandHistory> histories = Arrays.asList(
-                createTestHistory(UUID.randomUUID()),
-                createTestHistory(UUID.randomUUID()),
-                createTestHistory(UUID.randomUUID())
-            );
+                    createTestHistory(UUID.randomUUID()),
+                    createTestHistory(UUID.randomUUID()),
+                    createTestHistory(UUID.randomUUID()));
 
             when(handHistoryRepository.findByGameIdOrderByHandNumberDesc(gameId))
-                .thenReturn(histories);
+                    .thenReturn(histories);
 
             List<HandHistory> result = handHistoryService.getGameHistory(gameId);
 
@@ -236,11 +238,10 @@ class HandHistoryServiceTest {
         void shouldGetPagedGameHistory() {
             UUID gameId = UUID.randomUUID();
             Page<HandHistory> page = new PageImpl<>(
-                Collections.singletonList(createTestHistory(UUID.randomUUID()))
-            );
+                    Collections.singletonList(createTestHistory(UUID.randomUUID())));
 
             when(handHistoryRepository.findByGameId(eq(gameId), any(PageRequest.class)))
-                .thenReturn(page);
+                    .thenReturn(page);
 
             Page<HandHistory> result = handHistoryService.getGameHistory(gameId, 0, 10);
 
@@ -251,12 +252,11 @@ class HandHistoryServiceTest {
         @DisplayName("Should get recent hands")
         void shouldGetRecentHands() {
             List<HandHistory> recentHands = Arrays.asList(
-                createTestHistory(UUID.randomUUID()),
-                createTestHistory(UUID.randomUUID())
-            );
+                    createTestHistory(UUID.randomUUID()),
+                    createTestHistory(UUID.randomUUID()));
 
             when(handHistoryRepository.findTop50ByOrderByPlayedAtDesc())
-                .thenReturn(recentHands);
+                    .thenReturn(recentHands);
 
             List<HandHistory> result = handHistoryService.getRecentHands();
 
@@ -267,11 +267,10 @@ class HandHistoryServiceTest {
         @DisplayName("Should get biggest pots")
         void shouldGetBiggestPots() {
             List<HandHistory> bigPots = Collections.singletonList(
-                createTestHistory(UUID.randomUUID())
-            );
+                    createTestHistory(UUID.randomUUID()));
 
             when(handHistoryRepository.findTop10ByOrderByFinalPotDesc())
-                .thenReturn(bigPots);
+                    .thenReturn(bigPots);
 
             List<HandHistory> result = handHistoryService.getBiggestPots();
 
@@ -290,10 +289,9 @@ class HandHistoryServiceTest {
             HandHistory history = createTestHistoryWithActions(historyId);
 
             when(handHistoryRepository.findById(historyId))
-                .thenReturn(Optional.of(history));
+                    .thenReturn(Optional.of(history));
 
-            HandHistoryService.ReplayData result = 
-                handHistoryService.generateReplayData(historyId);
+            HandHistoryService.ReplayData result = handHistoryService.generateReplayData(historyId);
 
             assertThat(result).isNotNull();
             assertThat(result.handNumber()).isEqualTo(history.getHandNumber());
@@ -306,10 +304,9 @@ class HandHistoryServiceTest {
             UUID historyId = UUID.randomUUID();
 
             when(handHistoryRepository.findById(historyId))
-                .thenReturn(Optional.empty());
+                    .thenReturn(Optional.empty());
 
-            HandHistoryService.ReplayData result = 
-                handHistoryService.generateReplayData(historyId);
+            HandHistoryService.ReplayData result = handHistoryService.generateReplayData(historyId);
 
             assertThat(result).isNull();
         }
@@ -331,7 +328,7 @@ class HandHistoryServiceTest {
 
     private HandHistory createTestHistoryWithActions(UUID id) {
         HandHistory history = createTestHistory(id);
-        
+
         HandHistory.HandHistoryPlayer player = new HandHistory.HandHistoryPlayer();
         player.setPlayerId(UUID.randomUUID());
         player.setPlayerName("Alice");
@@ -340,12 +337,12 @@ class HandHistoryServiceTest {
 
         
         HandHistory.ActionRecord action = new HandHistory.ActionRecord(
-            UUID.randomUUID(),  
-            "Alice",            
-            "RAISE",            
-            60,                 
-            "PRE_FLOP",         
-            LocalDateTime.now() 
+                UUID.randomUUID(), 
+                "Alice", 
+                "RAISE", 
+                60, 
+                "PRE_FLOP", 
+                LocalDateTime.now() 
         );
         history.getActions().add(action);
 

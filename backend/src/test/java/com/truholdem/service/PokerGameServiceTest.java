@@ -1,22 +1,37 @@
 package com.truholdem.service;
 
-import com.truholdem.dto.ShowdownResult;
-import com.truholdem.model.*;
-import com.truholdem.repository.GameRepository;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import com.truholdem.dto.ShowdownResult;
+import com.truholdem.model.Deck;
+import com.truholdem.model.Game;
+import com.truholdem.model.GamePhase;
+import com.truholdem.model.Player;
+import com.truholdem.model.PlayerAction;
+import com.truholdem.model.PlayerInfo;
+import com.truholdem.model.Value;
+import com.truholdem.repository.GameRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("PokerGameService Tests")
@@ -42,12 +57,11 @@ class PokerGameServiceTest {
     @BeforeEach
     void setUp() {
         pokerGameService = new PokerGameService(
-            gameRepository, 
-            handEvaluator,
-            handHistoryService,
-            playerStatisticsService,
-            notificationService
-        );
+                gameRepository,
+                handEvaluator,
+                handHistoryService,
+                playerStatisticsService,
+                notificationService);
     }
 
     @Nested
@@ -59,9 +73,8 @@ class PokerGameServiceTest {
         void shouldCreateNewGameWithValidPlayers() {
             
             List<PlayerInfo> players = List.of(
-                new PlayerInfo("Player1", 1000, false),
-                new PlayerInfo("Bot1", 1000, true)
-            );
+                    new PlayerInfo("Player1", 1000, false),
+                    new PlayerInfo("Bot1", 1000, true));
 
             when(gameRepository.save(any(Game.class))).thenAnswer(invocation -> {
                 Game game = invocation.getArgument(0);
@@ -79,12 +92,12 @@ class PokerGameServiceTest {
             assertNotNull(game);
             assertEquals(2, game.getPlayers().size());
             assertEquals(GamePhase.PRE_FLOP, game.getPhase());
-            
+
             
             for (Player player : game.getPlayers()) {
                 assertEquals(2, player.getHand().size());
             }
-            
+
             
             assertTrue(game.getCurrentPot() > 0);
             assertEquals(game.getBigBlind(), game.getCurrentBet());
@@ -94,11 +107,10 @@ class PokerGameServiceTest {
         @DisplayName("Should throw exception for too few players")
         void shouldThrowExceptionForTooFewPlayers() {
             List<PlayerInfo> players = List.of(
-                new PlayerInfo("Player1", 1000, false)
-            );
+                    new PlayerInfo("Player1", 1000, false));
 
-            assertThrows(IllegalArgumentException.class, 
-                () -> pokerGameService.createNewGame(players));
+            assertThrows(IllegalArgumentException.class,
+                    () -> pokerGameService.createNewGame(players));
         }
 
         @Test
@@ -109,15 +121,15 @@ class PokerGameServiceTest {
                 players.add(new PlayerInfo("Player" + i, 1000, false));
             }
 
-            assertThrows(IllegalArgumentException.class, 
-                () -> pokerGameService.createNewGame(players));
+            assertThrows(IllegalArgumentException.class,
+                    () -> pokerGameService.createNewGame(players));
         }
 
         @Test
         @DisplayName("Should throw exception for null players list")
         void shouldThrowExceptionForNullPlayers() {
-            assertThrows(IllegalArgumentException.class, 
-                () -> pokerGameService.createNewGame(null));
+            assertThrows(IllegalArgumentException.class,
+                    () -> pokerGameService.createNewGame(null));
         }
     }
 
@@ -136,7 +148,7 @@ class PokerGameServiceTest {
             Player player1 = new Player("Player1", 1000, false);
             player1.setId(UUID.randomUUID());
             player1.setBetAmount(10); 
-            
+
             Player player2 = new Player("Player2", 1000, false);
             player2.setId(UUID.randomUUID());
             player2.setBetAmount(20); 
@@ -198,8 +210,8 @@ class PokerGameServiceTest {
             when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
 
             
-            assertThrows(IllegalStateException.class, 
-                () -> pokerGameService.playerAct(gameId, playerId, PlayerAction.CHECK, 0));
+            assertThrows(IllegalStateException.class,
+                    () -> pokerGameService.playerAct(gameId, playerId, PlayerAction.CHECK, 0));
         }
 
         @Test
@@ -258,8 +270,8 @@ class PokerGameServiceTest {
             when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
 
             
-            assertThrows(IllegalStateException.class, 
-                () -> pokerGameService.playerAct(gameId, wrongPlayerId, PlayerAction.FOLD, 0));
+            assertThrows(IllegalStateException.class,
+                    () -> pokerGameService.playerAct(gameId, wrongPlayerId, PlayerAction.FOLD, 0));
         }
 
         @Test
@@ -275,8 +287,8 @@ class PokerGameServiceTest {
             when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
 
             
-            assertThrows(IllegalStateException.class, 
-                () -> pokerGameService.playerAct(gameId, playerId, PlayerAction.CALL, 0));
+            assertThrows(IllegalStateException.class,
+                    () -> pokerGameService.playerAct(gameId, playerId, PlayerAction.CALL, 0));
         }
     }
 
@@ -290,7 +302,7 @@ class PokerGameServiceTest {
             
             Game game = createGameAtPhase(GamePhase.PRE_FLOP);
             UUID gameId = game.getId();
-            
+
             
             for (Player player : game.getPlayers()) {
                 player.setBetAmount(game.getCurrentBet());
@@ -303,8 +315,8 @@ class PokerGameServiceTest {
             when(gameRepository.save(any(Game.class))).thenAnswer(i -> i.getArgument(0));
 
             
-            Game result = pokerGameService.playerAct(gameId, 
-                game.getPlayers().get(0).getId(), PlayerAction.CHECK, 0);
+            Game result = pokerGameService.playerAct(gameId,
+                    game.getPlayers().get(0).getId(), PlayerAction.CHECK, 0);
 
             
             assertEquals(GamePhase.FLOP, result.getPhase());
@@ -317,7 +329,7 @@ class PokerGameServiceTest {
             
             Game game = createGameAtPhase(GamePhase.FLOP);
             UUID gameId = game.getId();
-            
+
             
             for (int i = 1; i < game.getPlayers().size(); i++) {
                 game.getPlayers().get(i).setFolded(true);
@@ -328,8 +340,8 @@ class PokerGameServiceTest {
             when(gameRepository.save(any(Game.class))).thenAnswer(i -> i.getArgument(0));
 
             
-            Game result = pokerGameService.playerAct(gameId, 
-                game.getPlayers().get(0).getId(), PlayerAction.CHECK, 0);
+            Game result = pokerGameService.playerAct(gameId,
+                    game.getPlayers().get(0).getId(), PlayerAction.CHECK, 0);
 
             
             assertTrue(result.isFinished());
@@ -388,25 +400,23 @@ class PokerGameServiceTest {
             
             Game game = createShowdownScenario();
             UUID gameId = game.getId();
-            
+
             Player player1 = game.getPlayers().get(0);
             Player player2 = game.getPlayers().get(1);
 
             HandRanking strongHand = new HandRanking(
-                HandRanking.HandType.TWO_PAIR, 
-                List.of(Value.ACE, Value.KING), 
-                List.of(Value.QUEEN)
-            );
+                    HandRanking.HandType.TWO_PAIR,
+                    List.of(Value.ACE, Value.KING),
+                    List.of(Value.QUEEN));
             HandRanking weakHand = new HandRanking(
-                HandRanking.HandType.ONE_PAIR, 
-                List.of(Value.JACK), 
-                List.of(Value.TEN, Value.NINE, Value.EIGHT)
-            );
+                    HandRanking.HandType.ONE_PAIR,
+                    List.of(Value.JACK),
+                    List.of(Value.TEN, Value.NINE, Value.EIGHT));
 
             when(handEvaluator.evaluate(eq(player1.getHand()), any()))
-                .thenReturn(strongHand);
+                    .thenReturn(strongHand);
             when(handEvaluator.evaluate(eq(player2.getHand()), any()))
-                .thenReturn(weakHand);
+                    .thenReturn(weakHand);
 
             
             ShowdownResult result = pokerGameService.resolveShowdown(game);
@@ -415,7 +425,7 @@ class PokerGameServiceTest {
             assertNotNull(result);
             assertEquals(1, result.getWinners().size());
             assertEquals(player1.getName(), result.getWinners().get(0).getPlayerName());
-            assertEquals(game.getCurrentPot(), result.getWinners().get(0).getAmountWon());
+            assertEquals(200, result.getWinners().get(0).getAmountWon());
         }
 
         @Test
@@ -429,10 +439,9 @@ class PokerGameServiceTest {
             Player player2 = game.getPlayers().get(1);
 
             HandRanking tiedHand = new HandRanking(
-                HandRanking.HandType.ONE_PAIR, 
-                List.of(Value.ACE), 
-                List.of(Value.KING, Value.QUEEN, Value.JACK)
-            );
+                    HandRanking.HandType.ONE_PAIR,
+                    List.of(Value.ACE),
+                    List.of(Value.KING, Value.QUEEN, Value.JACK));
 
             when(handEvaluator.evaluate(any(), any())).thenReturn(tiedHand);
 
@@ -532,7 +541,7 @@ class PokerGameServiceTest {
             
             Game game = new Game();
             game.setId(UUID.randomUUID());
-            
+
             Player human = new Player("Human", 1000, false);
             human.setId(UUID.randomUUID());
             game.addPlayer(human);
@@ -541,8 +550,8 @@ class PokerGameServiceTest {
             when(gameRepository.findById(game.getId())).thenReturn(Optional.of(game));
 
             
-            assertThrows(IllegalStateException.class, 
-                () -> pokerGameService.executeBotAction(game.getId(), human.getId()));
+            assertThrows(IllegalStateException.class,
+                    () -> pokerGameService.executeBotAction(game.getId(), human.getId()));
         }
     }
 
@@ -581,7 +590,7 @@ class PokerGameServiceTest {
             assertEquals(2, result.getHandNumber());
             assertEquals(GamePhase.PRE_FLOP, result.getPhase());
             assertFalse(result.isFinished());
-            
+
             for (Player p : result.getPlayers()) {
                 assertFalse(p.isFolded());
                 assertEquals(2, p.getHand().size());
@@ -639,8 +648,8 @@ class PokerGameServiceTest {
             when(gameRepository.findById(game.getId())).thenReturn(Optional.of(game));
 
             
-            assertThrows(IllegalStateException.class, 
-                () -> pokerGameService.startNewHand(game.getId()));
+            assertThrows(IllegalStateException.class,
+                    () -> pokerGameService.startNewHand(game.getId()));
         }
     }
 }

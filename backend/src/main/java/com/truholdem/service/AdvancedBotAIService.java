@@ -1,12 +1,27 @@
 package com.truholdem.service;
 
-import com.truholdem.model.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import com.truholdem.model.Card;
+import com.truholdem.model.Game;
+import com.truholdem.model.GamePhase;
+import com.truholdem.model.Player;
+import com.truholdem.model.PlayerAction;
+import com.truholdem.model.Suit;
+import com.truholdem.model.Value;
 
 
 @Service
@@ -34,12 +49,12 @@ public class AdvancedBotAIService {
         double potOdds = calculatePotOdds(game, bot);
         int position = getPositionScore(game, bot);
         BotPersonality personality = getBotPersonality(bot.getName());
-        
+
         
         double adjustedStrength = adjustForPersonality(handStrength, personality, game.getPhase());
-        
-        logger.debug("Bot {} decision: strength={:.2f}, potOdds={:.2f}, position={}", 
-            bot.getName(), handStrength, potOdds, position);
+
+        logger.debug("Bot {} decision: strength={:.2f}, potOdds={:.2f}, position={}",
+                bot.getName(), handStrength, potOdds, position);
 
         
         if (game.getPhase() == GamePhase.PRE_FLOP) {
@@ -52,7 +67,8 @@ public class AdvancedBotAIService {
 
     
 
-    private BotDecision preFlopDecision(Game game, Player bot, double strength, int position, BotPersonality personality) {
+    private BotDecision preFlopDecision(Game game, Player bot, double strength, int position,
+            BotPersonality personality) {
         int currentBet = game.getCurrentBet();
         int botBet = bot.getBetAmount();
         int toCall = currentBet - botBet;
@@ -70,9 +86,9 @@ public class AdvancedBotAIService {
                 int raiseAmount = calculateRaiseAmount(game, bot, strength, personality);
                 return new BotDecision(PlayerAction.RAISE, raiseAmount, "Strong hand, late position");
             } else {
-                return toCall > 0 
-                    ? new BotDecision(PlayerAction.CALL, 0, "Strong hand, early position")
-                    : new BotDecision(PlayerAction.CHECK, 0, "Strong hand, check");
+                return toCall > 0
+                        ? new BotDecision(PlayerAction.CALL, 0, "Strong hand, early position")
+                        : new BotDecision(PlayerAction.CHECK, 0, "Strong hand, check");
             }
         }
 
@@ -101,8 +117,8 @@ public class AdvancedBotAIService {
 
     
 
-    private BotDecision postFlopDecision(Game game, Player bot, double strength, double potOdds, 
-                                          int position, BotPersonality personality) {
+    private BotDecision postFlopDecision(Game game, Player bot, double strength, double potOdds,
+            int position, BotPersonality personality) {
         int currentBet = game.getCurrentBet();
         int botBet = bot.getBetAmount();
         int toCall = currentBet - botBet;
@@ -131,8 +147,8 @@ public class AdvancedBotAIService {
                 return new BotDecision(PlayerAction.CALL, 0, "Good hand, +EV call");
             } else {
                 return shouldBluff(game, bot, position, personality)
-                    ? new BotDecision(PlayerAction.RAISE, calculateBluffAmount(game, bot), "Bluff raise")
-                    : new BotDecision(PlayerAction.FOLD, 0, "Good hand, bad pot odds");
+                        ? new BotDecision(PlayerAction.RAISE, calculateBluffAmount(game, bot), "Bluff raise")
+                        : new BotDecision(PlayerAction.FOLD, 0, "Good hand, bad pot odds");
             }
         }
 
@@ -140,9 +156,9 @@ public class AdvancedBotAIService {
         if (strength > 0.40) {
             double requiredEquity = potOdds;
             if (strength + getImpliedOddsBonus(game) > requiredEquity) {
-                return toCall > 0 
-                    ? new BotDecision(PlayerAction.CALL, 0, "Drawing hand, implied odds")
-                    : new BotDecision(PlayerAction.CHECK, 0, "Drawing hand, free card");
+                return toCall > 0
+                        ? new BotDecision(PlayerAction.CALL, 0, "Drawing hand, implied odds")
+                        : new BotDecision(PlayerAction.CHECK, 0, "Drawing hand, free card");
             }
         }
 
@@ -163,8 +179,9 @@ public class AdvancedBotAIService {
 
     
     public double calculateHandStrength(List<Card> hand, List<Card> communityCards, int numOpponents) {
-        if (hand == null || hand.size() < 2) return 0;
-        
+        if (hand == null || hand.size() < 2)
+            return 0;
+
         
         if (communityCards == null || communityCards.isEmpty()) {
             return calculatePreFlopStrength(hand);
@@ -187,7 +204,7 @@ public class AdvancedBotAIService {
             List<Card> fullBoard = new ArrayList<>(communityCards);
             int cardsNeeded = 5 - fullBoard.size();
             int deckIndex = 0;
-            
+
             for (int j = 0; j < cardsNeeded && deckIndex < remainingDeck.size(); j++) {
                 fullBoard.add(remainingDeck.get(deckIndex++));
             }
@@ -199,25 +216,29 @@ public class AdvancedBotAIService {
                 opponentHand.add(remainingDeck.get(deckIndex));
             }
 
-            if (opponentHand.size() < 2) continue;
+            if (opponentHand.size() < 2)
+                continue;
 
             
             HandRanking myRanking = handEvaluator.evaluate(hand, fullBoard);
             HandRanking oppRanking = handEvaluator.evaluate(opponentHand, fullBoard);
 
             int comparison = myRanking.compareTo(oppRanking);
-            if (comparison > 0) wins++;
-            else if (comparison < 0) losses++;
-            else ties++;
+            if (comparison > 0)
+                wins++;
+            else if (comparison < 0)
+                losses++;
+            else
+                ties++;
         }
 
         
         double winRate = (double) wins / MONTE_CARLO_ITERATIONS;
         double tieRate = (double) ties / MONTE_CARLO_ITERATIONS;
-        
+
         
         double adjustedWinRate = Math.pow(winRate + tieRate * 0.5, Math.max(1, numOpponents - 1));
-        
+
         return Math.max(0, Math.min(1, adjustedWinRate));
     }
 
@@ -225,7 +246,7 @@ public class AdvancedBotAIService {
     double calculatePreFlopStrength(List<Card> hand) {
         Card c1 = hand.get(0);
         Card c2 = hand.get(1);
-        
+
         int v1 = c1.getValue().ordinal();
         int v2 = c2.getValue().ordinal();
         boolean suited = c1.getSuit() == c2.getSuit();
@@ -233,8 +254,10 @@ public class AdvancedBotAIService {
 
         
         if (pair) {
-            if (v1 >= Value.TEN.ordinal()) return 0.85 + (v1 - Value.TEN.ordinal()) * 0.03; 
-            if (v1 >= Value.SEVEN.ordinal()) return 0.65 + (v1 - Value.SEVEN.ordinal()) * 0.05; 
+            if (v1 >= Value.TEN.ordinal())
+                return 0.85 + (v1 - Value.TEN.ordinal()) * 0.03; 
+            if (v1 >= Value.SEVEN.ordinal())
+                return 0.65 + (v1 - Value.SEVEN.ordinal()) * 0.05; 
             return 0.50 + v1 * 0.02; 
         }
 
@@ -257,12 +280,15 @@ public class AdvancedBotAIService {
         }
 
         
-        if (suited) baseStrength += 0.05;
+        if (suited)
+            baseStrength += 0.05;
 
         
         int gap = high - low;
-        if (gap == 1) baseStrength += 0.03;
-        else if (gap == 2) baseStrength += 0.02;
+        if (gap == 1)
+            baseStrength += 0.03;
+        else if (gap == 2)
+            baseStrength += 0.02;
 
         return Math.min(0.85, baseStrength);
     }
@@ -286,18 +312,19 @@ public class AdvancedBotAIService {
     double calculatePotOdds(Game game, Player bot) {
         int pot = game.getCurrentPot();
         int toCall = game.getCurrentBet() - bot.getBetAmount();
-        
-        if (toCall <= 0) return 0;
-        
+
+        if (toCall <= 0)
+            return 0;
+
         return (double) toCall / (pot + toCall);
     }
 
     private double getImpliedOddsBonus(Game game) {
         
         long activePlayers = game.getPlayers().stream()
-            .filter(p -> !p.isFolded() && !p.isAllIn())
-            .count();
-        
+                .filter(p -> !p.isFolded() && !p.isAllIn())
+                .count();
+
         return activePlayers * 0.02;
     }
 
@@ -307,8 +334,8 @@ public class AdvancedBotAIService {
         int dealerPos = game.getDealerPosition();
         int botIndex = -1;
         List<Player> activePlayers = game.getPlayers().stream()
-            .filter(p -> !p.isFolded())
-            .collect(Collectors.toList());
+                .filter(p -> !p.isFolded())
+                .collect(Collectors.toList());
 
         for (int i = 0; i < activePlayers.size(); i++) {
             if (activePlayers.get(i).getId().equals(bot.getId())) {
@@ -317,14 +344,18 @@ public class AdvancedBotAIService {
             }
         }
 
-        if (botIndex < 0) return 0;
+        if (botIndex < 0)
+            return 0;
 
         int relativePosition = (botIndex - dealerPos + activePlayers.size()) % activePlayers.size();
         int totalPositions = activePlayers.size();
 
-        if (relativePosition == 0) return 3; 
-        if (relativePosition >= totalPositions - 2) return 2; 
-        if (relativePosition >= totalPositions / 2) return 1; 
+        if (relativePosition == 0)
+            return 3; 
+        if (relativePosition >= totalPositions - 2)
+            return 2; 
+        if (relativePosition >= totalPositions / 2)
+            return 1; 
         return 0; 
     }
 
@@ -361,10 +392,10 @@ public class AdvancedBotAIService {
     private int calculateBetAmount(int pot, double strength, BotPersonality personality) {
         double betFraction = (0.3 + strength * 0.4) * personality.aggressionFactor;
         int betAmount = (int) (pot * betFraction);
-        
+
         
         betAmount += random.nextInt(Math.max(1, pot / 10));
-        
+
         return Math.max(1, betAmount);
     }
 
@@ -373,7 +404,7 @@ public class AdvancedBotAIService {
         
         double bluffFraction = 0.5 + random.nextDouble() * 0.25;
         int bluffAmount = (int) (pot * bluffFraction);
-        
+
         return Math.min(bluffAmount, bot.getChips());
     }
 
@@ -381,7 +412,8 @@ public class AdvancedBotAIService {
 
     private boolean shouldBluff(Game game, Player bot, int position, BotPersonality personality) {
         
-        if (bot.getChips() < game.getBigBlind() * 3) return false;
+        if (bot.getChips() < game.getBigBlind() * 3)
+            return false;
 
         
         double bluffChance = personality.bluffFrequency;
@@ -389,12 +421,14 @@ public class AdvancedBotAIService {
 
         
         long activePlayers = game.getPlayers().stream()
-            .filter(p -> !p.isFolded())
-            .count();
-        if (activePlayers <= 2) bluffChance += 0.1;
+                .filter(p -> !p.isFolded())
+                .count();
+        if (activePlayers <= 2)
+            bluffChance += 0.1;
 
         
-        if (game.getPhase() == GamePhase.RIVER) bluffChance += 0.05;
+        if (game.getPhase() == GamePhase.RIVER)
+            bluffChance += 0.05;
 
         return random.nextDouble() < bluffChance;
     }
@@ -422,10 +456,10 @@ public class AdvancedBotAIService {
     }
 
     public enum BotPersonality {
-        TIGHT_AGGRESSIVE(1.2, 0.08, 0.15, 1.3),    
-        LOOSE_AGGRESSIVE(0.9, 0.05, 0.25, 1.4),    
-        TIGHT_PASSIVE(1.3, 0.12, 0.05, 0.8),       
-        LOOSE_PASSIVE(0.8, 0.03, 0.10, 0.9);       
+        TIGHT_AGGRESSIVE(1.2, 0.08, 0.15, 1.3), 
+        LOOSE_AGGRESSIVE(0.9, 0.05, 0.25, 1.4), 
+        TIGHT_PASSIVE(1.3, 0.12, 0.05, 0.8), 
+        LOOSE_PASSIVE(0.8, 0.03, 0.10, 0.9); 
 
         final double handRangeMultiplier;
         final double callThreshold;
@@ -469,12 +503,14 @@ public class AdvancedBotAIService {
         }
 
         double getAggressionFactor() {
-            if (calls == 0) return (bets + raises) > 0 ? 10 : 1;
+            if (calls == 0)
+                return (bets + raises) > 0 ? 10 : 1;
             return (double) (bets + raises) / calls;
         }
 
         double getFoldFrequency() {
-            if (totalActions == 0) return 0.5;
+            if (totalActions == 0)
+                return 0.5;
             return (double) folds / totalActions;
         }
     }
@@ -482,8 +518,8 @@ public class AdvancedBotAIService {
     
 
     public record BotDecision(
-        PlayerAction action,
-        int amount,
-        String reasoning
-    ) {}
+            PlayerAction action,
+            int amount,
+            String reasoning) {
+    }
 }
