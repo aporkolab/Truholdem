@@ -1,46 +1,66 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { PlayerInfo } from './register-players/register-players.component';
 import { PlayerService } from './services/player.service';
 import { Router } from '@angular/router';
-import { RegisterPlayersComponent } from './register-players/register-players.component';
-import { GameTableComponent } from './game-table/game-table.component';
+import { SoundService } from './services/sound.service';
 
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.scss'],
     standalone: true,
-    imports: [CommonModule, RegisterPlayersComponent, GameTableComponent]
+    imports: [CommonModule, RouterModule]
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   private playerService = inject(PlayerService);
   private router = inject(Router);
+  private soundService = inject(SoundService);
+  private destroy$ = new Subject<void>();
 
-  title = 'texas-holdem-frontend';
+  title = 'TruHoldem';
   registeredPlayers: PlayerInfo[] = [];
-  gameStarted = false;
-
+  soundEnabled = true;
 
   ngOnInit(): void {
-    // Feliratkozunk a PlayerService változásaira
-    this.playerService.players$.subscribe(players => {
+    
+    this.playerService.players$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(players => {
       this.registeredPlayers = players;
-      this.gameStarted = players.length > 0;
     });
+
+    
+    this.soundService.settings$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(settings => {
+      this.soundEnabled = settings.enabled;
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  toggleSound(): void {
+    this.soundService.toggleSound();
+    this.soundService.playClick();
   }
 
   onPlayersRegistered(playersInfo: PlayerInfo[]): void {
     if (this.isValidPlayersArray(playersInfo)) {
       console.log('Registered players:', playersInfo);
-      this.playerService.setPlayers(playersInfo); // Játékosok tárolása
-      this.router.navigate(['/start']); // Navigálás a játéktérre
+      this.playerService.setPlayers(playersInfo);
+      this.router.navigate(['/start']);
     } else {
       console.error('Unexpected players data:', playersInfo);
     }
   }
 
-  // Ellenőrzi, hogy a játékosok adatai érvényesek-e
   private isValidPlayersArray(playersInfo: PlayerInfo[]): boolean {
     return Array.isArray(playersInfo) && playersInfo.length > 0;
   }

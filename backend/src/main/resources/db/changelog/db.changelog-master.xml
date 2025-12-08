@@ -7,7 +7,8 @@
 
     <include file="db/changelog/01-initial-schema.xml"/>
     <include file="db/changelog/02-add-users-and-authentication.xml"/>
-    <include file="db/changelog/03-add-game-statistics.xml"/>
-    <include file="db/changelog/04-add-tournament-support.xml"/>
+    <include file="db/changelog/03-game-enhancements.xml"/>
+    <include file="db/changelog/04-advanced-features.xml"/>
+    <include file="db/changelog/05-history-and-stats.xml"/>
 
 </databaseChangeLog>

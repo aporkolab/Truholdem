@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "poker_games") // "game" is often a reserved keyword in SQL
+@Table(name = "poker_games")
 public class Game {
 
     @Id
@@ -41,13 +41,41 @@ public class Game {
 
     private int bigBlind;
 
+    private int dealerPosition;
+
+    private String winnerName;
+
+    private String winningHandDescription;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "game_winner_ids", joinColumns = @JoinColumn(name = "game_id"))
+    private List<UUID> winnerIds = new ArrayList<>();
+
+    private boolean isFinished;
+
+    private int handNumber;
+
+    
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "game_side_pots", joinColumns = @JoinColumn(name = "game_id"))
+    @OrderColumn
+    private List<SidePot> sidePots = new ArrayList<>();
+
+    private int lastRaiseAmount;
+
+    private int minRaiseAmount;
+
     public Game() {
-        this.smallBlind = 10; // Default values, can be configured
+        this.smallBlind = 10;
         this.bigBlind = 20;
         this.phase = GamePhase.PRE_FLOP;
+        this.dealerPosition = 0;
+        this.isFinished = false;
+        this.handNumber = 1;
+        this.minRaiseAmount = bigBlind;
     }
 
-    // Getters and Setters
+    
 
     public UUID getId() {
         return id;
@@ -136,5 +164,138 @@ public class Game {
 
     public void setDeck(List<Card> deck) {
         this.deck = deck;
+    }
+
+    public int getDealerPosition() {
+        return dealerPosition;
+    }
+
+    public void setDealerPosition(int dealerPosition) {
+        this.dealerPosition = dealerPosition;
+    }
+
+    public String getWinnerName() {
+        return winnerName;
+    }
+
+    public void setWinnerName(String winnerName) {
+        this.winnerName = winnerName;
+    }
+
+    public String getWinningHandDescription() {
+        return winningHandDescription;
+    }
+
+    public void setWinningHandDescription(String winningHandDescription) {
+        this.winningHandDescription = winningHandDescription;
+    }
+
+    public List<UUID> getWinnerIds() {
+        return winnerIds;
+    }
+
+    public void setWinnerIds(List<UUID> winnerIds) {
+        this.winnerIds = winnerIds;
+    }
+
+    public boolean isFinished() {
+        return isFinished;
+    }
+
+    public void setFinished(boolean finished) {
+        isFinished = finished;
+    }
+
+    public int getHandNumber() {
+        return handNumber;
+    }
+
+    public void setHandNumber(int handNumber) {
+        this.handNumber = handNumber;
+    }
+
+    public List<SidePot> getSidePots() {
+        return sidePots;
+    }
+
+    public void setSidePots(List<SidePot> sidePots) {
+        this.sidePots = sidePots;
+    }
+
+    public void addSidePot(SidePot sidePot) {
+        this.sidePots.add(sidePot);
+    }
+
+    public int getLastRaiseAmount() {
+        return lastRaiseAmount;
+    }
+
+    public void setLastRaiseAmount(int lastRaiseAmount) {
+        this.lastRaiseAmount = lastRaiseAmount;
+    }
+
+    public int getMinRaiseAmount() {
+        return minRaiseAmount;
+    }
+
+    public void setMinRaiseAmount(int minRaiseAmount) {
+        this.minRaiseAmount = minRaiseAmount;
+    }
+
+    
+
+    public Player getCurrentPlayer() {
+        if (players.isEmpty() || currentPlayerIndex >= players.size()) {
+            return null;
+        }
+        return players.get(currentPlayerIndex);
+    }
+
+    public List<Player> getActivePlayers() {
+        return players.stream()
+                .filter(p -> !p.isFolded() && p.getChips() >= 0)
+                .toList();
+    }
+
+    public List<Player> getPlayersStillInHand() {
+        return players.stream()
+                .filter(p -> !p.isFolded())
+                .toList();
+    }
+
+    public int getTotalPot() {
+        int total = currentPot;
+        for (SidePot sidePot : sidePots) {
+            total += sidePot.getAmount();
+        }
+        return total;
+    }
+
+    public void resetForNewHand() {
+        this.communityCards.clear();
+        this.currentPot = 0;
+        this.currentBet = 0;
+        this.phase = GamePhase.PRE_FLOP;
+        this.winnerName = null;
+        this.winningHandDescription = null;
+        this.winnerIds.clear();
+        this.isFinished = false;
+        this.sidePots.clear();
+        this.lastRaiseAmount = bigBlind;
+        this.minRaiseAmount = bigBlind;
+        this.handNumber++;
+
+        
+        this.dealerPosition = (this.dealerPosition + 1) % players.size();
+
+        
+        for (Player player : players) {
+            player.clearHand();
+            player.setFolded(false);
+            player.setBetAmount(0);
+            player.setHasActed(false);
+            player.setAllIn(false);
+            player.setTotalBetInRound(0);
+        }
     }
 }

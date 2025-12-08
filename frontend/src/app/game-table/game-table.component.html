@@ -1,84 +1,188 @@
 <div class="game-table">
 
-	<!-- PLAYERS -->
+	
+	<div *ngIf="isLoading" class="loading-overlay">
+		<div class="spinner"></div>
+		<span>Loading...</span>
+	</div>
+
+	
+	<div *ngIf="errorMessage" class="error-banner" (click)="errorMessage = ''">
+		{{ errorMessage }}
+		<span class="close-btn">×</span>
+	</div>
+
+	
+	<div class="game-info-bar">
+		<div class="phase-indicator">
+			<span class="label">Phase:</span>
+			<span class="value">{{ getPhaseDisplayName() }}</span>
+		</div>
+		<div class="pot-display">
+			<span class="label">Pot:</span>
+			<span class="value">${{ currentPot || game.currentPot || 0 }}</span>
+		</div>
+		<div class="hand-number" *ngIf="game.handNumber">
+			<span class="label">Hand:</span>
+			<span class="value">#{{ game.handNumber }}</span>
+		</div>
+		<div class="current-bet" *ngIf="game.currentBet > 0">
+			<span class="label">Bet:</span>
+			<span class="value">${{ game.currentBet }}</span>
+		</div>
+	</div>
+
+	
 	<div *ngFor="let player of game.players; let i = index" class="player"
 		[class.user]="player.name && !player.name.startsWith('Bot')"
 		[class.left]="player.name && player.name.startsWith('Bot') && (i % 3 === 1)"
 		[class.top]="player.name && player.name.startsWith('Bot') && (i % 3 === 2)"
 		[class.right]="player.name && player.name.startsWith('Bot') && (i % 3 === 0)"
-		[class.active-player]="nonBotPlayer?.id === player.id">
+		[class.active-turn]="isPlayerTurn(player)"
+		[class.folded]="player.folded"
+		[class.all-in]="player.isAllIn">
 
-		<!-- PLAYER CARDS -->
-		<div *ngFor="let card of player.hand; let j = index" class="card" [style.animation-delay.s]="0.1 * j">
-			<div class="card-inner"
-				[class.is-flipped]="!player.folded && (game.phase === 'RIVER' || !(player.name && player.name.startsWith('Bot')))">
-				<div class="card-front">
-					<img [src]="getCardImage(card)" [alt]="card.value + ' of ' + card.suit" class="card-image" />
-				</div>
-				<div class="card-back">
-					<img src="../../assets/cards/back.png" alt="Card Back" class="card-image" />
+		
+		<div *ngIf="isDealer(i)" class="dealer-button" title="Dealer">D</div>
+
+		
+		<div class="player-cards">
+			<div *ngFor="let card of player.hand; let j = index" class="card" [style.animation-delay.s]="0.1 * j">
+				<div class="card-inner"
+					[class.is-flipped]="!player.folded && (game.phase === 'SHOWDOWN' || !(player.name && player.name.startsWith('Bot')))">
+					<div class="card-front">
+						<img [src]="getCardImage(card)" [alt]="card.value + ' of ' + card.suit" class="card-image" />
+					</div>
+					<div class="card-back">
+						<img [src]="getCardBackImage()" alt="Card Back" class="card-image" />
+					</div>
 				</div>
 			</div>
 		</div>
 
-		<!-- PLAYER INFO -->
+		
 		<div class="player-info">
-			<span>{{ (player.name || '').replace('Bot', '') || 'Anonymous' }}</span>
-			<span> Chips: {{ player.chips }}</span>
-			<span *ngIf="isFolded()"> Folded</span>
+			<div class="player-name">
+				{{ player.name?.replace('Bot', 'Bot ') || 'Anonymous' }}
+				<span *ngIf="isPlayerTurn(player)" class="turn-indicator">⏱</span>
+			</div>
+			<div class="player-chips">
+				<span class="chip-icon">💰</span>
+				{{ player.chips }}
+			</div>
+			<div class="player-bet" *ngIf="player.betAmount > 0">
+				Bet: ${{ player.betAmount }}
+			</div>
+			<div class="player-status" *ngIf="getPlayerStatus(player)">
+				{{ getPlayerStatus(player) }}
+			</div>
 		</div>
 	</div>
 
-	<!-- COMMUNITY CARDS -->
+	
 	<div class="community-cards">
-		<div *ngFor="let card of game.communityCards; let k = index" class="card"
-			[style.animation-delay.s]="0.3 + (0.1 * k)">
-			<div class="card-inner is-flipped">
-				<div class="card-front">
-					<img [src]="getCardImage(card)" [alt]="card.value + ' of ' + card.suit" class="card-image" />
+		<div class="community-cards-label" *ngIf="game.communityCards?.length > 0">Community Cards</div>
+		<div class="cards-container">
+			<div *ngFor="let card of game.communityCards; let k = index" class="card"
+				[style.animation-delay.s]="0.3 + (0.1 * k)">
+				<div class="card-inner is-flipped">
+					<div class="card-front">
+						<img [src]="getCardImage(card)" [alt]="card.value + ' of ' + card.suit" class="card-image" />
+					</div>
+					<div class="card-back">
+						<img [src]="getCardBackImage()" alt="Card Back" class="card-image" />
+					</div>
 				</div>
-				<div class="card-back">
-					<img src="../../assets/cards/back.png" alt="Card Back" class="card-image" />
+			</div>
+			
+			<div *ngFor="let placeholder of [].constructor(5 - (game.communityCards?.length || 0))" 
+				 class="card card-placeholder">
+				<div class="card-inner">
+					<div class="card-back">
+						<img [src]="getCardBackImage()" alt="Card Placeholder" class="card-image placeholder-image" />
+					</div>
 				</div>
 			</div>
 		</div>
 	</div>
 
-	<!-- ACTIONS -->
-	<div class="actions">
-		<!-- <button *ngIf="!isFolded() && game.phase !== 'RIVER'" (click)="check()">Check</button> -->
-		<button *ngIf="!isFolded() && game.phase !== 'RIVER'" (click)="fold()">Fold</button>
+	
+	<div class="actions" *ngIf="!game.isFinished && game.phase !== 'SHOWDOWN'">
+		<div class="action-buttons" *ngIf="canPlayerAct()">
+			
+			<button class="btn btn-danger" (click)="fold()">
+				Fold
+			</button>
 
-		<app-raise-input *ngIf="!isFolded() && game.phase !== 'RIVER'" [game]="game"
-			(actionTaken)="handleRaiseAction()"></app-raise-input>
+			
+			<button *ngIf="canCheck()" class="btn btn-secondary" (click)="check()">
+				Check
+			</button>
 
-		<div>Pots: {{ currentPot || 0 }}</div>
+			
+			<button *ngIf="!canCheck() && canCall()" class="btn btn-primary" (click)="call()">
+				Call ${{ getCallAmount() }}
+			</button>
 
-		<div>
-			<!--
-      <button *ngIf="!isFolded() && game.phase === 'PRE_FLOP'" (click)="dealFlop()">Deal Flop</button>
-      <button *ngIf="!isFolded() && game.phase === 'FLOP'" (click)="dealTurn()">Deal Turn</button>
-      <button *ngIf="!isFolded() && game.phase === 'TURN'" (click)="dealRiver()">Deal River</button>
-      -->
-			<button *ngIf="!isFolded() && game.phase === 'RIVER'" (click)="endGame(); openModal()">End Game</button>
+			
+			<app-raise-input 
+				[game]="game"
+				(actionTaken)="handleRaiseAction($event)">
+			</app-raise-input>
+
+			
+			<button class="btn btn-warning" (click)="allIn()" 
+				*ngIf="humanPlayer && humanPlayer.chips > 0">
+				All-In (${{ humanPlayer?.chips || 0 }})
+			</button>
+		</div>
+
+		
+		<div class="waiting-message" *ngIf="!canPlayerAct() && !isFolded()">
+			<span class="spinner-small"></span>
+			Waiting for {{ game.players[game.currentPlayerIndex || 0]?.name || 'opponent' }}...
+		</div>
+
+		
+		<div class="folded-message" *ngIf="isFolded()">
+			You folded this hand. Waiting for result...
 		</div>
 	</div>
 
-	<!-- MODAL -->
-	<div class="modal" *ngIf="showModal">
-		<div class="modal-dialog">
+	
+	<div class="showdown-actions" *ngIf="game.phase === 'SHOWDOWN' && !showModal">
+		<button class="btn btn-primary btn-lg" (click)="openModal()">
+			Show Results
+		</button>
+	</div>
+
+	
+	<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+		<div class="modal-dialog" (click)="$event.stopPropagation()">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title">Game Ended</h5>
-					<button type="button" class="btn-close" (click)="closeModal()" aria-label="Close modal">×</button>
+					<h5 class="modal-title">🏆 Game Result</h5>
+					<button type="button" class="btn-close" (click)="closeModal()" aria-label="Close">×</button>
 				</div>
 				<div class="modal-body">
-					<p>{{ gameResultMessage }}</p>
+					<p class="winner-message">{{ gameResultMessage }}</p>
+					<p class="winning-hand" *ngIf="winningHandDescription">
+						<strong>Winning Hand:</strong> {{ winningHandDescription }}
+					</p>
+					<div class="final-pot" *ngIf="currentPot > 0">
+						<strong>Final Pot:</strong> ${{ currentPot }}
+					</div>
 				</div>
 				<div class="modal-footer">
-					<!-- <button type="button" class="btn btn-secondary" (click)="resetGame()">Reset Game</button> -->
-					<button type="button" class="btn btn-primary" (click)="reloadPageOnStart()">Start New Match</button>
-					<button type="button" class="btn btn-secondary" (click)="closeModal()">Close</button>
+					<button type="button" class="btn btn-primary" (click)="startNewHand()">
+						Next Hand
+					</button>
+					<button type="button" class="btn btn-success" (click)="startNewGame()">
+						New Game
+					</button>
+					<button type="button" class="btn btn-secondary" (click)="goToLobby()">
+						Back to Lobby
+					</button>
 				</div>
 			</div>
 		</div>

@@ -22,10 +22,13 @@ public class Player {
     private List<Card> hand = new ArrayList<>();
 
     private int chips;
-    private int betAmount;
+    private int betAmount;          
+    private int totalBetInRound;    
     private boolean isFolded;
     private boolean isBot;
     private boolean hasActed;
+    private boolean isAllIn;
+    private int seatPosition;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "game_id")
@@ -37,18 +40,39 @@ public class Player {
         this.chips = startingChips;
         this.isFolded = false;
         this.isBot = isBot;
+        this.isAllIn = false;
+        this.totalBetInRound = 0;
     }
 
     public Player() {
-        // JPA requires a no-arg constructor
+        
     }
 
-    public void placeBet(int amount) {
-        if (amount <= 0 || amount > chips) {
-            throw new IllegalArgumentException("Invalid bet amount");
+    
+    public int placeBet(int amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Bet amount must be positive");
         }
-        betAmount += amount;
-        chips -= amount;
+        
+        int actualBet = Math.min(amount, chips);
+        betAmount += actualBet;
+        totalBetInRound += actualBet;
+        chips -= actualBet;
+        
+        if (chips == 0) {
+            isAllIn = true;
+        }
+        
+        return actualBet;
+    }
+
+    
+    public int call(int currentBet) {
+        int amountToCall = currentBet - betAmount;
+        if (amountToCall <= 0) {
+            return 0;
+        }
+        return placeBet(amountToCall);
     }
 
     public void addWinnings(int amount) {
@@ -63,8 +87,29 @@ public class Player {
         hand.add(card);
     }
 
+    public void clearHand() {
+        this.hand.clear();
+    }
+
+    
+    public void resetBetForNewRound() {
+        this.betAmount = 0;
+        this.hasActed = false;
+    }
+
+    
+    public boolean canAct() {
+        return !isFolded && !isAllIn;
+    }
+
+    
+
     public UUID getId() {
         return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
     }
 
     public Game getGame() {
@@ -79,44 +124,36 @@ public class Player {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public boolean isFolded() {
         return isFolded;
-    }
-
-    public int getBetAmount() {
-        return betAmount;
-    }
-
-    public List<Card> getHand() {
-        return hand;
-    }
-
-    public int getChips() {
-        return chips;
     }
 
     public void setFolded(boolean folded) {
         isFolded = folded;
     }
 
-    public void setId(UUID id) {
-        this.id = id;
+    public int getBetAmount() {
+        return betAmount;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setBetAmount(int betAmount) {
+        this.betAmount = betAmount;
+    }
+
+    public List<Card> getHand() {
+        return hand;
     }
 
     public void setHand(List<Card> hand) {
         this.hand = hand;
     }
 
-    public void setBot(boolean bot) {
-        isBot = bot;
-    }
-
-    public void setBetAmount(int betAmount) {
-        this.betAmount = betAmount;
+    public int getChips() {
+        return chips;
     }
 
     public void setChips(int chips) {
@@ -127,8 +164,8 @@ public class Player {
         return isBot;
     }
 
-    public void clearHand() {
-        this.hand.clear();
+    public void setBot(boolean bot) {
+        isBot = bot;
     }
 
     public boolean hasActed() {
@@ -137,5 +174,40 @@ public class Player {
 
     public void setHasActed(boolean hasActed) {
         this.hasActed = hasActed;
+    }
+
+    public boolean isAllIn() {
+        return isAllIn;
+    }
+
+    public void setAllIn(boolean allIn) {
+        isAllIn = allIn;
+    }
+
+    public int getTotalBetInRound() {
+        return totalBetInRound;
+    }
+
+    public void setTotalBetInRound(int totalBetInRound) {
+        this.totalBetInRound = totalBetInRound;
+    }
+
+    public int getSeatPosition() {
+        return seatPosition;
+    }
+
+    public void setSeatPosition(int seatPosition) {
+        this.seatPosition = seatPosition;
+    }
+
+    @Override
+    public String toString() {
+        return "Player{" +
+                "name='" + name + '\'' +
+                ", chips=" + chips +
+                ", betAmount=" + betAmount +
+                ", isFolded=" + isFolded +
+                ", isAllIn=" + isAllIn +
+                '}';
     }
 }

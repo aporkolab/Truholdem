@@ -1,117 +1,235 @@
-# Truholdem v.1.3.0
+# TruHoldem v2.0 🃏
 
-[![Build](https://img.shields.io/github/actions/workflow/status/APorkolab/Truholdem/ci.yml?branch=main)](../../actions)
+[![Build](https://img.shields.io/github/actions/workflow/status/APorkolab/Truholdem/ci-cd.yml?branch=main)](../../actions)
+[![Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen)](./backend/target/site/jacoco/index.html)
 [![License](https://img.shields.io/badge/license-MIT-informational.svg)](LICENSE)
-[![Issues](https://img.shields.io/github/issues/APorkolab/Truholdem.svg)](../../issues)
+[![Java](https://img.shields.io/badge/Java-21-orange)](https://openjdk.org/)
+[![Angular](https://img.shields.io/badge/Angular-20-red)](https://angular.io/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-green)](https://spring.io/projects/spring-boot)
 
+A sophisticated **Texas Hold'em poker simulator** with advanced Monte Carlo AI, real-time multiplayer, comprehensive statistics tracking, and hand replay functionality.
 
-Truholdem is a sophisticated poker program designed to offer a comprehensive platform for learning, practicing, and simulating Texas Hold'em poker games. This README provides an in-depth overview of the project, installation instructions, usage guidelines, and contribution details.
+---
 
-## Project Overview
+## ✨ Features
 
-Truholdem is developed to simulate Texas Hold'em poker, providing a rich environment for users to enhance their poker skills, test strategies, and enjoy engaging poker sessions. The project features a robust backend in Java using Spring Boot and an interactive frontend using Angular and SCSS.
+### Core Gameplay
+- 🎮 **Full Texas Hold'em Implementation** - Pre-flop, Flop, Turn, River, Showdown
+- 🤖 **Advanced AI Opponents** - Monte Carlo simulation with 500 iterations
+- 💰 **Complex Pot Management** - Side pots, all-in situations
+- 🎯 **Hand Evaluation** - Complete poker hand ranking system
 
-The main goal is to imitate the world of Win95/Win98 poker simulators and provide an overwhelmingly positive experience for users.
+### Statistics & Analytics
+- 📊 **15+ Player Metrics** - VPIP, PFR, Aggression Factor, WTSD, W$SD
+- 🏆 **6 Leaderboard Categories** - Winnings, Win Rate, Hands Won, Biggest Pot, Win Streak
+- 📈 **Session Tracking** - Win/loss streaks, session history
 
-### Features
+### Hand History & Replay
+- 📝 **Complete Hand Recording** - Every action, bet, and card dealt
+- ▶️ **Interactive Replay** - Step through hands action by action
+- 🔍 **Search & Filter** - Find hands by player, date, pot size
 
-- **Game Simulation**: Fully functional Texas Hold'em poker simulation, allowing users to experience realistic gameplay.
-- **User Interface**: Intuitive and responsive interface designed with modern web technologies.
-- **Multiplayer Support**: Capability for multiple players to join and play poker games, including AI opponents.
-- **AI Opponents**: Play against AI opponents with basic decision-making capabilities.
-- **Customizable Settings**: Adjust game rules and settings to create personalized poker experiences.
-- **Cross-Platform Compatibility**: Accessible on various devices and platforms, ensuring a seamless experience.
-- **Betting System**: Implemented betting mechanics including raising, calling, and folding.
-- **Hand Evaluation**: Robust hand evaluation system to determine the winner of each round.
-- **Game Phases**: Proper implementation of all poker game phases (Pre-flop, Flop, Turn, River, Showdown).
+### Technical Features
+- 🔄 **Real-time Updates** - WebSocket for live game state
+- 🔊 **Sound Effects** - 7 distinct game sounds
+- ⚙️ **Customizable Settings** - Sound, animations, table theme
+- 📱 **Responsive Design** - Desktop, tablet, mobile
 
-## Installation
+---
 
-To get started with Truholdem, follow these steps:
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   Frontend (Angular 20)                      │
+│  Components: GameTable, Leaderboard, HandReplay, Settings   │
+│  Services: PokerService, StatisticsService, WebSocketService│
+└────────────────────────────┬────────────────────────────────┘
+                             │ REST API / WebSocket
+┌────────────────────────────┴────────────────────────────────┐
+│                  Backend (Spring Boot 3.2)                   │
+│  Controllers → Services → Repositories → PostgreSQL         │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │ Key Services:                                        │    │
+│  │ • PokerGameService - Game logic & state management  │    │
+│  │ • AdvancedBotAIService - Monte Carlo AI decisions   │    │
+│  │ • HandEvaluator - Poker hand ranking                │    │
+│  │ • PlayerStatisticsService - Stats tracking          │    │
+│  │ • HandHistoryService - Recording & replay           │    │
+│  └─────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
+- Java 21+
+- Node.js 20+
+- PostgreSQL 16+
+- Maven 3.9+
 
-- Java Development Kit (JDK) 21 or later
-- Node.js and npm
-- Maven for building the backend project
+### Installation
 
-### Steps
+```bash
+# Clone repository
+git clone https://github.com/APorkolab/Truholdem.git
+cd Truholdem
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/APorkolab/Truholdem.git
-   ```
+# Backend setup
+cd backend
+./mvnw spring-boot:run
 
-2. Navigate to the project directory:
-   ```
-   cd Truholdem
-   ```
-
-3. Install backend dependencies and build the project:
-   ```
-   cd backend
-   ./mvnw clean install
-   ```
-
-4. Install frontend dependencies:
-   ```
-   cd ../frontend
-   npm install
-   ```
-
-5. Start the backend server:
-   ```
-   cd ../backend
-   ./mvnw spring-boot:run
-   ```
-
-6. Start the frontend development server:
-   ```
-   cd ../frontend
-   npm start
-   ```
-
-## Usage
-
-Once the servers are running, access the application in your web browser at `http://localhost:4200`. The backend runs at `http://localhost:4200`. Use the interface to play simulated Texas Hold'em poker games, practice strategies, and enjoy learning poker.
-
-## API Documentation
-
-The backend API is documented using Swagger UI. You can access the API documentation at `http://localhost:8080/swagger-ui.html` when the backend server is running.
-
-## Testing
-
-The project includes a comprehensive test suite. To run the tests, use the following command in the backend directory:
-
-```
-./mvnw test
+# Frontend setup (new terminal)
+cd frontend
+npm install
+npm run dev
 ```
 
-## Contributing
+### Docker Deployment
 
-Contributions are welcome! If you'd like to contribute to Truholdem, please follow these guidelines:
+```bash
+docker-compose up -d
+```
 
-1. Fork the repository.
-    
-2. Create a new branch for your feature or bugfix: 
+Access the application at `http://localhost:4200`
 
-	     git checkout -b feature-name
-    
-3. Commit your changes: +++ 
+---
 
-		git commit -m "Description of feature or fix"
-    
-4. Push to the branch:
+## 🧪 Testing
 
-		git push origin feature-name
-    
-5. Open a pull request with a description of your changes.
-    
+### Backend Tests
+```bash
+cd backend
+./mvnw test                    # Run all tests
+./mvnw verify                  # Tests + coverage report
+```
 
-## License
+### Frontend Tests
+```bash
+cd frontend
+npm run test:ci                # Unit tests with coverage
+npm run e2e:headless           # E2E tests (Cypress)
+```
 
-This project is licensed under the MIT License.
+### Test Summary
+| Component | Tests | Description |
+|-----------|-------|-------------|
+| Backend Unit | 120+ | Service layer tests |
+| Backend Integration | 45+ | API endpoint tests |
+| Frontend Unit | 80+ | Component & service tests |
+| E2E (Cypress) | 50+ | Full user flow tests |
 
-## Author
+---
 
-Truholdem is developed and maintained by [Adam Dr. Porkolab](https://github.com/APorkolab). The another projects of the author may access on [www.aporkolab.com](https://www.aporkolab.com). For any questions or inquiries, please open an issue on the repository or contact the author directly.
+## 📚 API Documentation
+
+### Game Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/poker/start` | Create new game |
+| GET | `/api/poker/{id}` | Get game state |
+| POST | `/api/poker/{id}/action` | Player action |
+| POST | `/api/poker/{id}/bot/{botId}` | Execute bot action |
+
+### Statistics Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/stats/player/{name}` | Player statistics |
+| GET | `/api/stats/leaderboard` | All leaderboards |
+| GET | `/api/stats/leaderboard/{type}` | Specific leaderboard |
+
+### Hand History Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/history/{id}` | Get hand details |
+| GET | `/api/history/{id}/replay` | Replay data |
+| GET | `/api/history/game/{gameId}` | Game history |
+| GET | `/api/history/recent` | Recent hands |
+
+### Monitoring
+| Endpoint | Description |
+|----------|-------------|
+| `/actuator/health` | Health status |
+| `/actuator/metrics` | Metrics |
+| `/actuator/prometheus` | Prometheus format |
+
+---
+
+## 🤖 Bot AI System
+
+The bot AI uses **Monte Carlo simulation** with:
+
+- **500 iterations** per decision for hand strength
+- **Position-aware** play (early, middle, late, button)
+- **Pot odds** calculation
+- **4 Personality Types**: TAG, LAG, Rock, Fish
+
+---
+
+## 📊 Statistics Tracked
+
+| Stat | Description |
+|------|-------------|
+| **VPIP** | Voluntarily Put $ In Pot |
+| **PFR** | Pre-Flop Raise % |
+| **AF** | Aggression Factor |
+| **WTSD** | Went To Showdown % |
+| **W$SD** | Won $ At Showdown % |
+
+---
+
+## 🛠️ Tech Stack
+
+### Backend
+- Java 21, Spring Boot 3.2, PostgreSQL 16
+- Spring Data JPA, Liquibase, WebSocket (STOMP)
+- JUnit 5, Mockito, JaCoCo
+
+### Frontend
+- Angular 20, TypeScript 5.9, RxJS
+- Bootstrap 5, Jasmine/Karma, Cypress
+
+### DevOps
+- Docker, GitHub Actions, Trivy, Prometheus
+
+---
+
+## 📁 Project Structure
+
+```
+truholdem/
+├── backend/
+│   └── src/main/java/com/truholdem/
+│       ├── controller/      # REST endpoints
+│       ├── service/         # Business logic
+│       ├── model/           # Domain entities
+│       └── repository/      # Data access
+├── frontend/
+│   └── src/app/
+│       ├── game-table/      # Main game UI
+│       ├── leaderboard/     # Statistics
+│       ├── hand-replay/     # Replay viewer
+│       └── services/        # API clients
+├── .github/workflows/       # CI/CD
+└── docker-compose.yml
+```
+
+---
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file.
+
+---
+
+## 👤 Author
+
+**Adam Dr. Porkolab**
+- GitHub: [@APorkolab](https://github.com/APorkolab)
+- Website: [www.aporkolab.com](https://www.aporkolab.com)
+
+---
+
+<p align="center">Made with ❤️ and ♠️♥️♦️♣️</p>

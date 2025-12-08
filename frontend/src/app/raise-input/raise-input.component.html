@@ -1,34 +1,88 @@
-<div id="buttons">
-	<button *ngIf="game?.phase !== 'RIVER' && !isFolded()" type="button" class="btn btn-primary raise-btn"
-		(click)="showRaiseInput()">Raise</button>
-	<button *ngIf="game?.phase !== 'RIVER' &&!isFolded()" type="button" class="btn btn-info"
-		(click)="check()">Check</button>
-	<!-- <button *ngIf="game?.phase !== 'RIVER' && !isFolded()" type="button" class="btn btn-warning all-in-btn"
-		(click)="allIn()">All-in</button> -->
-	<div>
-		<!-- <button type="button" class="btn btn-info new-game-btn" (click)="startNewGame()">New Game</button> -->
-		<!-- <button type="button" class="btn btn-danger reset-game-btn" (click)="resetGame()">Reset Game</button> -->
-	</div>
+<div class="raise-container" *ngIf="canRaise()">
+	
+	<button type="button" class="btn btn-primary raise-btn" (click)="showRaiseInput()">
+		{{ getButtonLabel() }}
+	</button>
 </div>
 
-<!-- Raise input overlay -->
-<div *ngIf="isRaiseInputVisible" class="raise-overlay">
-	<div class="raise-input-box">
-		<button class="close-btn" (click)="cancelRaise()">×</button>
-		<div class="info">
-			Minimum raise: {{ minRaiseAmount }}
+
+<div *ngIf="isRaiseInputVisible" class="raise-overlay" (click)="cancelRaise()">
+	<div class="raise-input-box" (click)="$event.stopPropagation()">
+		<div class="raise-header">
+			<h4>{{ getButtonLabel() }}</h4>
+			<button class="close-btn" (click)="cancelRaise()">×</button>
 		</div>
-		<div class="info">
-			Maximum raise: {{ maxRaiseAmount }}
+
+		<div class="raise-info">
+			<div class="info-row">
+				<span class="label">Minimum:</span>
+				<span class="value">${{ minRaiseAmount }}</span>
+			</div>
+			<div class="info-row">
+				<span class="label">Maximum (All-in):</span>
+				<span class="value">${{ maxRaiseAmount }}</span>
+			</div>
+			<div class="info-row" *ngIf="game?.currentPot">
+				<span class="label">Current Pot:</span>
+				<span class="value">${{ game.currentPot }}</span>
+			</div>
 		</div>
-		<div class="info">
-			Suggested raise: {{ suggestedRaiseAmount }}
+
+		
+		<div class="quick-bets">
+			<button type="button" class="btn btn-outline-secondary btn-sm" (click)="setMinRaise()">
+				Min
+			</button>
+			<button type="button" class="btn btn-outline-secondary btn-sm" (click)="setHalfPot()" 
+				*ngIf="game?.currentPot > 0">
+				½ Pot
+			</button>
+			<button type="button" class="btn btn-outline-secondary btn-sm" (click)="setFullPot()"
+				*ngIf="game?.currentPot > 0">
+				Pot
+			</button>
+			<button type="button" class="btn btn-outline-warning btn-sm" (click)="setAllIn()">
+				All-In
+			</button>
 		</div>
-		<input type="number" [(ngModel)]="raiseAmount" placeholder="Enter raise amount" [max]="maxRaiseAmount" />
-		<div class="actions">
-			<button type="button" class="btn btn-success" (click)="raise(raiseAmount)">OK</button>
-			<!-- <button type="button" class="btn btn-warning" (click)="allIn()">All-in</button> -->
-			<button type="button" class="btn btn-danger" (click)="cancelRaise()">Cancel</button>
+
+		
+		<div class="amount-input">
+			<label for="raiseAmount">Amount:</label>
+			<div class="input-group">
+				<span class="input-prefix">$</span>
+				<input 
+					type="number" 
+					id="raiseAmount"
+					[(ngModel)]="raiseAmount" 
+					[min]="minRaiseAmount" 
+					[max]="maxRaiseAmount"
+					placeholder="Enter amount"
+					class="form-control" />
+			</div>
+			
+			<input 
+				type="range" 
+				class="form-range"
+				[(ngModel)]="raiseAmount"
+				[min]="minRaiseAmount"
+				[max]="maxRaiseAmount"
+				step="10" />
+		</div>
+
+		
+		<div *ngIf="errorMessage" class="error-message">
+			{{ errorMessage }}
+		</div>
+
+		
+		<div class="raise-actions">
+			<button type="button" class="btn btn-success btn-lg" (click)="confirmRaise()">
+				{{ getButtonLabel() }} ${{ raiseAmount }}
+			</button>
+			<button type="button" class="btn btn-secondary" (click)="cancelRaise()">
+				Cancel
+			</button>
 		</div>
 	</div>
 </div>

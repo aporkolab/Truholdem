@@ -1,103 +1,347 @@
 package com.truholdem.service;
 
+import com.truholdem.dto.ShowdownResult;
+import com.truholdem.dto.ShowdownResult.WinnerInfo;
 import com.truholdem.model.*;
 import com.truholdem.repository.GameRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import com.truholdem.model.GamePhase;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class PokerGameService {
+
+    private static final Logger logger = LoggerFactory.getLogger(PokerGameService.class);
 
     private final GameRepository gameRepository;
     private final HandEvaluator handEvaluator;
+    private final HandHistoryService handHistoryService;
+    private final PlayerStatisticsService playerStatisticsService;
+    private final GameNotificationService notificationService;
 
-    public PokerGameService(GameRepository gameRepository, HandEvaluator handEvaluator) {
+    public PokerGameService(
+            GameRepository gameRepository, 
+            HandEvaluator handEvaluator,
+            HandHistoryService handHistoryService,
+            PlayerStatisticsService playerStatisticsService,
+            GameNotificationService notificationService) {
         this.gameRepository = gameRepository;
         this.handEvaluator = handEvaluator;
+        this.handHistoryService = handHistoryService;
+        this.playerStatisticsService = playerStatisticsService;
+        this.notificationService = notificationService;
     }
 
+    
     public Game createNewGame(List<PlayerInfo> playersInfo) {
-        if (playersInfo == null || playersInfo.size() < 2 || playersInfo.size() > 4) {
-            throw new IllegalArgumentException("Player count must be between 2 and 4.");
-        }
+        validatePlayerCount(playersInfo);
 
         Game game = new Game();
         Deck deck = new Deck();
         deck.shuffle();
 
-        playersInfo.forEach(info -> {
+        
+        for (int i = 0; i < playersInfo.size(); i++) {
+            PlayerInfo info = playersInfo.get(i);
             Player player = new Player(info.getName(), info.getStartingChips(), info.isBot());
-            player.addCardToHand(deck.drawCard());
-            player.addCardToHand(deck.drawCard());
+            player.setSeatPosition(i);
             game.addPlayer(player);
-        });
+            
+            
+            playerStatisticsService.startSession(info.getName());
+        }
+
+        
+        dealHoleCards(game, deck);
 
         game.setDeck(deck.getCards());
-        setBlinds(game);
+        postBlinds(game);
         game.setPhase(GamePhase.PRE_FLOP);
 
-        return gameRepository.save(game);
+        Game savedGame = gameRepository.save(game);
+        
+        
+        handHistoryService.startRecording(savedGame);
+        
+        
+        notificationService.broadcastGameUpdate(savedGame);
+
+        logger.info("Created new game {} with {} players", savedGame.getId(), playersInfo.size());
+        return savedGame;
     }
 
+    
     public Game playerAct(UUID gameId, UUID playerId, PlayerAction action, int amount) {
         Game game = findGameById(gameId);
         Player player = findPlayerInGame(game, playerId);
 
-        // Validate that it is the player's turn
-        if (!game.getPlayers().get(game.getCurrentPlayerIndex()).getId().equals(playerId)) {
-            throw new IllegalStateException("It is not this player's turn.");
-        }
+        validatePlayerTurn(game, playerId);
+        validatePlayerCanAct(player);
 
+        logger.debug("Player {} performing action {} with amount {}", player.getName(), action, amount);
+
+        int actualAmount = 0;
         switch (action) {
-            case FOLD:
-                player.setFolded(true);
-                break;
-            case CHECK:
-                if (player.getBetAmount() < game.getCurrentBet()) {
-                    throw new IllegalStateException("Cannot check when a bet has been made. Must call or raise.");
-                }
-                break;
-            case CALL:
-                int callAmount = game.getCurrentBet() - player.getBetAmount();
-                if (player.getChips() < callAmount) {
-                    throw new IllegalStateException("Not enough chips to call.");
-                }
-                player.setChips(player.getChips() - callAmount);
-                game.setCurrentPot(game.getCurrentPot() + callAmount);
-                player.setBetAmount(game.getCurrentBet());
-                break;
-            case BET:
-            case RAISE:
-                if (amount <= game.getCurrentBet()) {
-                    throw new IllegalArgumentException("Raise amount must be greater than the current bet.");
-                }
-                int totalBet = amount - player.getBetAmount();
-                if (player.getChips() < totalBet) {
-                    throw new IllegalStateException("Not enough chips to raise.");
-                }
-                player.setChips(player.getChips() - totalBet);
-                game.setCurrentPot(game.getCurrentPot() + totalBet);
-                player.setBetAmount(amount);
-                game.setCurrentBet(amount);
-                // When a player raises, all other players need to act again.
-                game.getPlayers().forEach(p -> {
-                    if (!p.getId().equals(playerId)) {
-                        p.setHasActed(false);
-                    }
-                });
-                break;
+            case FOLD -> handleFold(game, player);
+            case CHECK -> handleCheck(game, player);
+            case CALL -> actualAmount = handleCall(game, player);
+            case BET -> actualAmount = handleBet(game, player, amount);
+            case RAISE -> actualAmount = handleRaise(game, player, amount);
         }
 
         player.setHasActed(true);
+        
+        
+        handHistoryService.recordAction(gameId, player, action, actualAmount, game.getPhase());
+        playerStatisticsService.recordAction(player.getName(), action.name());
+        
+        
+        if (player.isAllIn()) {
+            playerStatisticsService.recordAllIn(player.getName());
+        }
+        
+        
+        notificationService.broadcastPlayerAction(game, player, action.name(), actualAmount);
+        
         advanceGame(game);
 
         return gameRepository.save(game);
     }
 
+    
+    public Game executeBotAction(UUID gameId, UUID botId) {
+        Game game = findGameById(gameId);
+        Player bot = findPlayerInGame(game, botId);
+
+        if (!bot.isBot()) {
+            throw new IllegalStateException("Player is not a bot");
+        }
+
+        validatePlayerTurn(game, botId);
+
+        PlayerAction action = determineBotAction(game, bot);
+        int amount = 0;
+
+        if (action == PlayerAction.RAISE || action == PlayerAction.BET) {
+            amount = calculateBotBetAmount(game, bot);
+        }
+
+        return playerAct(gameId, botId, action, amount);
+    }
+
+    
+    public Optional<Game> getGame(UUID gameId) {
+        return gameRepository.findById(gameId);
+    }
+
+    
+    public Game startNewHand(UUID gameId) {
+        Game game = findGameById(gameId);
+
+        
+        game.getPlayers().removeIf(p -> p.getChips() <= 0);
+
+        if (game.getPlayers().size() < 2) {
+            throw new IllegalStateException("Not enough players with chips to continue");
+        }
+
+        game.resetForNewHand();
+
+        Deck deck = new Deck();
+        deck.shuffle();
+
+        dealHoleCards(game, deck);
+        game.setDeck(deck.getCards());
+        postBlinds(game);
+        game.setPhase(GamePhase.PRE_FLOP);
+
+        logger.info("Started new hand {} in game {}", game.getHandNumber(), gameId);
+        return gameRepository.save(game);
+    }
+
+    
+
+    private void validatePlayerCount(List<PlayerInfo> playersInfo) {
+        if (playersInfo == null || playersInfo.size() < 2 || playersInfo.size() > 10) {
+            throw new IllegalArgumentException("Player count must be between 2 and 10");
+        }
+    }
+
+    private void validatePlayerTurn(Game game, UUID playerId) {
+        Player currentPlayer = game.getCurrentPlayer();
+        if (currentPlayer == null || !currentPlayer.getId().equals(playerId)) {
+            throw new IllegalStateException("It is not this player's turn");
+        }
+    }
+
+    private void validatePlayerCanAct(Player player) {
+        if (player.isFolded()) {
+            throw new IllegalStateException("Player has already folded");
+        }
+        if (player.isAllIn()) {
+            throw new IllegalStateException("Player is all-in and cannot act");
+        }
+    }
+
+    private void dealHoleCards(Game game, Deck deck) {
+        
+        for (int round = 0; round < 2; round++) {
+            for (Player player : game.getPlayers()) {
+                if (player.getChips() > 0) {
+                    player.addCardToHand(deck.drawCard());
+                }
+            }
+        }
+    }
+
+    private void postBlinds(Game game) {
+        List<Player> activePlayers = getActivePlayersInOrder(game);
+        if (activePlayers.size() < 2) return;
+
+        int dealerPos = game.getDealerPosition() % activePlayers.size();
+
+        
+        int sbPos = (dealerPos + 1) % activePlayers.size();
+        
+        int bbPos = (dealerPos + 2) % activePlayers.size();
+
+        
+        if (activePlayers.size() == 2) {
+            sbPos = dealerPos;
+            bbPos = (dealerPos + 1) % 2;
+        }
+
+        Player sbPlayer = activePlayers.get(sbPos);
+        Player bbPlayer = activePlayers.get(bbPos);
+
+        
+        int sbAmount = sbPlayer.placeBet(game.getSmallBlind());
+        game.setCurrentPot(game.getCurrentPot() + sbAmount);
+
+        int bbAmount = bbPlayer.placeBet(game.getBigBlind());
+        game.setCurrentPot(game.getCurrentPot() + bbAmount);
+
+        game.setCurrentBet(game.getBigBlind());
+        game.setLastRaiseAmount(game.getBigBlind());
+        game.setMinRaiseAmount(game.getBigBlind());
+
+        
+        int firstToActPos = (bbPos + 1) % activePlayers.size();
+        if (activePlayers.size() == 2) {
+            firstToActPos = sbPos; 
+        }
+
+        
+        Player firstToAct = activePlayers.get(firstToActPos);
+        game.setCurrentPlayerIndex(game.getPlayers().indexOf(firstToAct));
+
+        logger.debug("Blinds posted: {} (SB: {}), {} (BB: {})", 
+            sbPlayer.getName(), sbAmount, bbPlayer.getName(), bbAmount);
+    }
+
+    private List<Player> getActivePlayersInOrder(Game game) {
+        return game.getPlayers().stream()
+                .filter(p -> !p.isFolded() && p.getChips() >= 0)
+                .toList();
+    }
+
+    
+
+    private void handleFold(Game game, Player player) {
+        player.setFolded(true);
+        logger.debug("Player {} folded", player.getName());
+    }
+
+    private void handleCheck(Game game, Player player) {
+        if (player.getBetAmount() < game.getCurrentBet()) {
+            throw new IllegalStateException("Cannot check when facing a bet. Must call, raise, or fold.");
+        }
+        logger.debug("Player {} checked", player.getName());
+    }
+
+    private int handleCall(Game game, Player player) {
+        int callAmount = game.getCurrentBet() - player.getBetAmount();
+        if (callAmount <= 0) {
+            
+            return 0;
+        }
+
+        int actualCall = player.call(game.getCurrentBet());
+        game.setCurrentPot(game.getCurrentPot() + actualCall);
+
+        logger.debug("Player {} called {} (total bet: {})", 
+            player.getName(), actualCall, player.getBetAmount());
+        return actualCall;
+    }
+
+    private int handleBet(Game game, Player player, int amount) {
+        if (game.getCurrentBet() > 0) {
+            throw new IllegalStateException("Cannot bet when there's already a bet. Use raise.");
+        }
+
+        if (amount < game.getBigBlind()) {
+            throw new IllegalArgumentException("Bet must be at least the big blind");
+        }
+
+        int actualBet = player.placeBet(amount);
+        game.setCurrentPot(game.getCurrentPot() + actualBet);
+        game.setCurrentBet(actualBet);
+        game.setLastRaiseAmount(actualBet);
+        game.setMinRaiseAmount(actualBet);
+
+        resetActedFlags(game, player);
+        logger.debug("Player {} bet {}", player.getName(), actualBet);
+        return actualBet;
+    }
+
+    private int handleRaise(Game game, Player player, int totalAmount) {
+        int raiseAmount = totalAmount - game.getCurrentBet();
+
+        if (raiseAmount < game.getMinRaiseAmount() && player.getChips() > raiseAmount) {
+            throw new IllegalArgumentException(
+                "Raise must be at least " + game.getMinRaiseAmount() + " more than current bet"
+            );
+        }
+
+        int toCall = game.getCurrentBet() - player.getBetAmount();
+        int totalToAdd = toCall + raiseAmount;
+
+        int actualBet = player.placeBet(totalToAdd);
+        game.setCurrentPot(game.getCurrentPot() + actualBet);
+        game.setCurrentBet(player.getBetAmount());
+        game.setLastRaiseAmount(raiseAmount);
+        game.setMinRaiseAmount(raiseAmount);
+
+        resetActedFlags(game, player);
+        logger.debug("Player {} raised to {}", player.getName(), player.getBetAmount());
+        return actualBet;
+    }
+
+    private void resetActedFlags(Game game, Player excludePlayer) {
+        for (Player p : game.getPlayers()) {
+            if (!p.getId().equals(excludePlayer.getId()) && !p.isFolded() && !p.isAllIn()) {
+                p.setHasActed(false);
+            }
+        }
+    }
+
+    
+
     private void advanceGame(Game game) {
+        
+        List<Player> playersInHand = game.getPlayersStillInHand();
+        if (playersInHand.size() == 1) {
+            
+            awardPotToSingleWinner(game, playersInHand.get(0));
+            return;
+        }
+
+        
         if (isBettingRoundComplete(game)) {
             advanceToNextPhase(game);
         } else {
@@ -107,123 +351,431 @@ public class PokerGameService {
 
     private boolean isBettingRoundComplete(Game game) {
         List<Player> activePlayers = game.getPlayers().stream()
-                .filter(p -> !p.isFolded()).toList();
+                .filter(p -> !p.isFolded())
+                .toList();
 
-        if (activePlayers.size() <= 1) {
-            return true;
+        
+        for (Player player : activePlayers) {
+            if (!player.isAllIn()) {
+                if (!player.hasActed()) {
+                    return false;
+                }
+                if (player.getBetAmount() < game.getCurrentBet()) {
+                    return false;
+                }
+            }
         }
 
-        boolean allHaveActed = activePlayers.stream().allMatch(Player::hasActed);
-        if (!allHaveActed) {
-            return false;
-        }
-
-        long distinctBets = activePlayers.stream()
-                .map(Player::getBetAmount)
-                .distinct()
-                .count();
-
-        return distinctBets == 1;
-    }
-
-    private void advanceToNextPhase(Game game) {
-        game.getPlayers().forEach(p -> {
-            p.setBetAmount(0);
-            p.setHasActed(false);
-        });
-        game.setCurrentBet(0);
-        game.setCurrentPlayerIndex(0); // Start from the first player for the new round
-
-        switch (game.getPhase()) {
-            case PRE_FLOP:
-                game.setPhase(GamePhase.FLOP);
-                dealFlop(game);
-                break;
-            case FLOP:
-                game.setPhase(GamePhase.TURN);
-                dealTurn(game);
-                break;
-            case TURN:
-                game.setPhase(GamePhase.RIVER);
-                dealRiver(game);
-                break;
-            case RIVER:
-                game.setPhase(GamePhase.SHOWDOWN);
-                // TODO: Implement showdown logic
-                break;
-            default:
-                break;
-        }
+        return true;
     }
 
     private void advanceToNextPlayer(Game game) {
-        int currentIndex = game.getCurrentPlayerIndex();
-        int nextIndex = (currentIndex + 1) % game.getPlayers().size();
-
-        while (game.getPlayers().get(nextIndex).isFolded()) {
-            nextIndex = (nextIndex + 1) % game.getPlayers().size();
-        }
-        game.setCurrentPlayerIndex(nextIndex);
-    }
-
-    private void dealFlop(Game game) {
-        drawCardFromDeck(game); // Burn
-        for (int i = 0; i < 3; i++) {
-            game.addCommunityCard(drawCardFromDeck(game));
-        }
-    }
-
-    private void dealTurn(Game game) {
-        drawCardFromDeck(game); // Burn
-        game.addCommunityCard(drawCardFromDeck(game));
-    }
-
-    private void dealRiver(Game game) {
-        drawCardFromDeck(game); // Burn
-        game.addCommunityCard(drawCardFromDeck(game));
-    }
-
-    private void setBlinds(Game game) {
         List<Player> players = game.getPlayers();
-        if (players.size() < 2) return;
+        int currentIndex = game.getCurrentPlayerIndex();
+        int playersCount = players.size();
 
-        Player smallBlindPlayer = players.get(0);
-        placeBlindBet(game, smallBlindPlayer, game.getSmallBlind());
+        for (int i = 1; i <= playersCount; i++) {
+            int nextIndex = (currentIndex + i) % playersCount;
+            Player nextPlayer = players.get(nextIndex);
 
-        Player bigBlindPlayer = players.get(1);
-        placeBlindBet(game, bigBlindPlayer, game.getBigBlind());
-
-        game.setCurrentBet(game.getBigBlind());
-        game.setCurrentPlayerIndex(players.size() > 2 ? 2 : 0);
-    }
-
-    private void placeBlindBet(Game game, Player player, int amount) {
-        int bet = Math.min(player.getChips(), amount);
-        player.setChips(player.getChips() - bet);
-        player.setBetAmount(bet);
-        game.setCurrentPot(game.getCurrentPot() + bet);
-    }
-
-    private Card drawCardFromDeck(Game game) {
-        if (game.getDeck().isEmpty()) {
-            throw new IllegalStateException("Cannot draw card from an empty deck.");
+            if (nextPlayer.canAct()) {
+                game.setCurrentPlayerIndex(nextIndex);
+                return;
+            }
         }
-        return game.getDeck().remove(0);
+
+        
+        logger.warn("No active players found to advance to");
     }
 
-    public Optional<Game> getGame(UUID gameId) {
-        return gameRepository.findById(gameId);
+    private void advanceToNextPhase(Game game) {
+        
+        for (Player player : game.getPlayers()) {
+            player.resetBetForNewRound();
+        }
+        game.setCurrentBet(0);
+        game.setMinRaiseAmount(game.getBigBlind());
+
+        
+        setFirstPlayerAfterDealer(game);
+
+        switch (game.getPhase()) {
+            case PRE_FLOP -> {
+                game.setPhase(GamePhase.FLOP);
+                dealCommunityCards(game, 3);
+                logger.info("Dealing FLOP");
+            }
+            case FLOP -> {
+                game.setPhase(GamePhase.TURN);
+                dealCommunityCards(game, 1);
+                logger.info("Dealing TURN");
+            }
+            case TURN -> {
+                game.setPhase(GamePhase.RIVER);
+                dealCommunityCards(game, 1);
+                logger.info("Dealing RIVER");
+            }
+            case RIVER -> {
+                game.setPhase(GamePhase.SHOWDOWN);
+                resolveShowdown(game);
+            }
+            default -> logger.warn("Unexpected phase: {}", game.getPhase());
+        }
+
+        
+        if (game.getPhase() != GamePhase.SHOWDOWN) {
+            checkForAutoAdvance(game);
+        }
     }
+
+    private void setFirstPlayerAfterDealer(Game game) {
+        List<Player> players = game.getPlayers();
+        int dealerPos = game.getDealerPosition();
+
+        for (int i = 1; i <= players.size(); i++) {
+            int pos = (dealerPos + i) % players.size();
+            Player player = players.get(pos);
+            if (player.canAct()) {
+                game.setCurrentPlayerIndex(pos);
+                return;
+            }
+        }
+    }
+
+    private void checkForAutoAdvance(Game game) {
+        
+        List<Player> canAct = game.getPlayers().stream()
+                .filter(Player::canAct)
+                .toList();
+
+        if (canAct.size() <= 1) {
+            
+            while (game.getPhase() != GamePhase.SHOWDOWN) {
+                autoAdvancePhase(game);
+            }
+        }
+    }
+
+    private void autoAdvancePhase(Game game) {
+        switch (game.getPhase()) {
+            case PRE_FLOP -> {
+                game.setPhase(GamePhase.FLOP);
+                dealCommunityCards(game, 3);
+            }
+            case FLOP -> {
+                game.setPhase(GamePhase.TURN);
+                dealCommunityCards(game, 1);
+            }
+            case TURN -> {
+                game.setPhase(GamePhase.RIVER);
+                dealCommunityCards(game, 1);
+            }
+            case RIVER -> {
+                game.setPhase(GamePhase.SHOWDOWN);
+                resolveShowdown(game);
+            }
+        }
+    }
+
+    private void dealCommunityCards(Game game, int count) {
+        
+        if (!game.getDeck().isEmpty()) {
+            game.getDeck().remove(0);
+        }
+
+        
+        for (int i = 0; i < count && !game.getDeck().isEmpty(); i++) {
+            game.addCommunityCard(game.getDeck().remove(0));
+        }
+    }
+
+    
+
+    
+    public ShowdownResult resolveShowdown(Game game) {
+        logger.info("Resolving showdown for game {}", game.getId());
+
+        List<Player> playersInHand = game.getPlayersStillInHand();
+        List<WinnerInfo> allWinners = new ArrayList<>();
+
+        
+        List<PotInfo> pots = calculatePots(game);
+
+        
+        for (PotInfo pot : pots) {
+            List<Player> eligiblePlayers = playersInHand.stream()
+                    .filter(p -> pot.eligiblePlayerIds.contains(p.getId()))
+                    .toList();
+
+            if (eligiblePlayers.isEmpty()) continue;
+
+            
+            Map<Player, HandRanking> rankings = evaluateHands(eligiblePlayers, game.getCommunityCards());
+            List<Player> potWinners = findBestHands(rankings);
+
+            
+            int winAmount = pot.amount / potWinners.size();
+            int remainder = pot.amount % potWinners.size();
+
+            for (int i = 0; i < potWinners.size(); i++) {
+                Player winner = potWinners.get(i);
+                int amount = winAmount + (i == 0 ? remainder : 0);
+                winner.addWinnings(amount);
+
+                HandRanking ranking = rankings.get(winner);
+                allWinners.add(new WinnerInfo(
+                    winner.getId(),
+                    winner.getName(),
+                    amount,
+                    ranking.getDescription(),
+                    new ArrayList<>(winner.getHand())
+                ));
+
+                
+                playerStatisticsService.recordShowdown(winner.getName(), true);
+                playerStatisticsService.recordWin(winner.getName(), amount);
+                if (winner.isAllIn()) {
+                    playerStatisticsService.recordAllInResult(winner.getName(), true);
+                }
+
+                logger.info("Player {} wins {} with {}", 
+                    winner.getName(), amount, ranking.getDescription());
+            }
+            
+            
+            for (Player loser : eligiblePlayers) {
+                if (!potWinners.contains(loser)) {
+                    playerStatisticsService.recordShowdown(loser.getName(), false);
+                    if (loser.isAllIn()) {
+                        playerStatisticsService.recordAllInResult(loser.getName(), false);
+                    }
+                }
+            }
+        }
+
+        
+        game.setFinished(true);
+        game.setCurrentPot(0);
+
+        if (!allWinners.isEmpty()) {
+            
+            WinnerInfo mainWinner = allWinners.stream()
+                    .max(Comparator.comparingInt(WinnerInfo::getAmountWon))
+                    .orElse(allWinners.get(0));
+
+            game.setWinnerName(mainWinner.getPlayerName());
+            game.setWinningHandDescription(mainWinner.getHandDescription());
+            game.getWinnerIds().clear();
+            allWinners.forEach(w -> game.getWinnerIds().add(w.getPlayerId()));
+        }
+
+        int totalWon = allWinners.stream().mapToInt(WinnerInfo::getAmountWon).sum();
+        String message = buildWinMessage(allWinners);
+        
+        ShowdownResult result = new ShowdownResult(allWinners, totalWon, message);
+        
+        
+        if (!allWinners.isEmpty()) {
+            WinnerInfo mainWinner = allWinners.get(0);
+            handHistoryService.recordCommunityCards(game.getId(), game.getCommunityCards());
+            handHistoryService.finishRecording(game.getId(), 
+                mainWinner.getPlayerName(), 
+                mainWinner.getHandDescription(), 
+                totalWon);
+        }
+        
+        notificationService.broadcastShowdown(game, result);
+
+        return result;
+    }
+
+    
+    private void awardPotToSingleWinner(Game game, Player winner) {
+        int potAmount = game.getCurrentPot();
+        winner.addWinnings(potAmount);
+
+        game.setWinnerName(winner.getName());
+        game.setWinningHandDescription("All opponents folded");
+        game.getWinnerIds().clear();
+        game.getWinnerIds().add(winner.getId());
+        game.setCurrentPot(0);
+        game.setFinished(true);
+        game.setPhase(GamePhase.SHOWDOWN);
+        
+        
+        playerStatisticsService.recordWin(winner.getName(), potAmount);
+        
+        
+        handHistoryService.finishRecording(game.getId(), 
+            winner.getName(), 
+            "All opponents folded", 
+            potAmount);
+
+        logger.info("Player {} wins {} - all opponents folded", winner.getName(), potAmount);
+    }
+
+    
+    private List<PotInfo> calculatePots(Game game) {
+        List<Player> playersInHand = game.getPlayersStillInHand();
+
+        
+        List<Integer> allInAmounts = playersInHand.stream()
+                .filter(Player::isAllIn)
+                .map(Player::getTotalBetInRound)
+                .distinct()
+                .sorted()
+                .toList();
+
+        if (allInAmounts.isEmpty()) {
+            
+            List<UUID> eligibleIds = playersInHand.stream()
+                    .map(Player::getId)
+                    .toList();
+            return List.of(new PotInfo(game.getCurrentPot(), eligibleIds));
+        }
+
+        
+        List<PotInfo> pots = new ArrayList<>();
+        int previousLevel = 0;
+
+        for (int level : allInAmounts) {
+            int potAmount = 0;
+            List<UUID> eligibleIds = new ArrayList<>();
+
+            for (Player p : playersInHand) {
+                int contribution = Math.min(p.getTotalBetInRound(), level) - previousLevel;
+                if (contribution > 0) {
+                    potAmount += contribution;
+                }
+                if (p.getTotalBetInRound() >= level) {
+                    eligibleIds.add(p.getId());
+                }
+            }
+
+            if (potAmount > 0) {
+                pots.add(new PotInfo(potAmount, eligibleIds));
+            }
+            previousLevel = level;
+        }
+
+        
+        int maxAllIn = allInAmounts.get(allInAmounts.size() - 1);
+        int mainPotAmount = 0;
+        List<UUID> mainPotEligible = new ArrayList<>();
+
+        for (Player p : playersInHand) {
+            int extraContribution = p.getTotalBetInRound() - maxAllIn;
+            if (extraContribution > 0) {
+                mainPotAmount += extraContribution;
+                mainPotEligible.add(p.getId());
+            } else if (p.getTotalBetInRound() >= maxAllIn) {
+                mainPotEligible.add(p.getId());
+            }
+        }
+
+        if (mainPotAmount > 0 && !mainPotEligible.isEmpty()) {
+            pots.add(new PotInfo(mainPotAmount, mainPotEligible));
+        }
+
+        return pots;
+    }
+
+    private Map<Player, HandRanking> evaluateHands(List<Player> players, List<Card> communityCards) {
+        Map<Player, HandRanking> rankings = new HashMap<>();
+        
+        for (Player player : players) {
+            HandRanking ranking = handEvaluator.evaluate(player.getHand(), communityCards);
+            if (ranking != null) {
+                rankings.put(player, ranking);
+            }
+        }
+        
+        return rankings;
+    }
+
+    private List<Player> findBestHands(Map<Player, HandRanking> rankings) {
+        if (rankings.isEmpty()) return List.of();
+
+        HandRanking bestRanking = rankings.values().stream()
+                .max(Comparator.naturalOrder())
+                .orElse(null);
+
+        if (bestRanking == null) return List.of();
+
+        return rankings.entrySet().stream()
+                .filter(e -> e.getValue().compareTo(bestRanking) == 0)
+                .map(Map.Entry::getKey)
+                .toList();
+    }
+
+    private String buildWinMessage(List<WinnerInfo> winners) {
+        if (winners.isEmpty()) return "No winner";
+
+        if (winners.size() == 1) {
+            WinnerInfo w = winners.get(0);
+            return String.format("%s wins %d with %s", 
+                w.getPlayerName(), w.getAmountWon(), w.getHandDescription());
+        }
+
+        return winners.stream()
+                .map(w -> String.format("%s wins %d", w.getPlayerName(), w.getAmountWon()))
+                .collect(Collectors.joining(", "));
+    }
+
+    
+
+    private PlayerAction determineBotAction(Game game, Player bot) {
+        int callAmount = game.getCurrentBet() - bot.getBetAmount();
+
+        
+        double random = Math.random();
+
+        if (callAmount == 0) {
+            
+            if (random < 0.3) {
+                return PlayerAction.BET;
+            }
+            return PlayerAction.CHECK;
+        }
+
+        
+        double potOdds = (double) callAmount / (game.getCurrentPot() + callAmount);
+
+        if (potOdds > 0.5 && random < 0.4) {
+            return PlayerAction.FOLD;
+        }
+
+        if (random < 0.15) {
+            return PlayerAction.RAISE;
+        }
+
+        return PlayerAction.CALL;
+    }
+
+    private int calculateBotBetAmount(Game game, Player bot) {
+        int minBet = game.getCurrentBet() + game.getMinRaiseAmount();
+        int maxBet = bot.getChips() + bot.getBetAmount();
+
+        
+        int potBet = Math.min(game.getCurrentPot() * 3, maxBet);
+        int betAmount = minBet + (int) (Math.random() * (potBet - minBet + 1));
+
+        return Math.min(betAmount, maxBet);
+    }
+
+    
+
+    private record PotInfo(int amount, List<UUID> eligiblePlayerIds) {}
 
     private Game findGameById(UUID gameId) {
         return gameRepository.findById(gameId)
-                .orElseThrow(() -> new NoSuchElementException("Game not found with ID: " + gameId));
+                .orElseThrow(() -> new NoSuchElementException("Game not found: " + gameId));
     }
 
     private Player findPlayerInGame(Game game, UUID playerId) {
         return game.getPlayers().stream()
                 .filter(p -> p.getId().equals(playerId))
                 .findFirst()
-                .orElseThrow(() -> new NoSuchElementException("Player not found with ID: " + playerId + " in game " + game.getId()));
+                .orElseThrow(() -> new NoSuchElementException("Player not found: " + playerId));
     }
 }

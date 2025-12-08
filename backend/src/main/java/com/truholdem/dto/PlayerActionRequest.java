@@ -1,11 +1,20 @@
 package com.truholdem.dto;
 
 import com.truholdem.model.PlayerAction;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 
 public class PlayerActionRequest {
 
+    @NotBlank(message = "Player ID is required")
     private String playerId;
+
+    @NotNull(message = "Action is required")
     private PlayerAction action;
+
+    @Min(value = 0, message = "Amount cannot be negative")
     private int amount;
 
     public PlayerActionRequest() {
@@ -17,7 +26,7 @@ public class PlayerActionRequest {
         this.amount = amount;
     }
 
-    // Getters and Setters
+    
     public String getPlayerId() {
         return playerId;
     }
@@ -40,5 +49,14 @@ public class PlayerActionRequest {
 
     public void setAmount(int amount) {
         this.amount = amount;
+    }
+
+    @Override
+    public String toString() {
+        return "PlayerActionRequest{" +
+                "playerId='" + playerId + '\'' +
+                ", action=" + action +
+                ", amount=" + amount +
+                '}';
     }
 }

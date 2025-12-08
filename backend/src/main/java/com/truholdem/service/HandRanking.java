@@ -8,25 +8,34 @@ import java.util.Objects;
 public class HandRanking implements Comparable<HandRanking> {
 
     public enum HandType {
-        HIGH_CARD,
-        ONE_PAIR,
-        TWO_PAIR,
-        THREE_OF_A_KIND,
-        STRAIGHT,
-        FLUSH,
-        FULL_HOUSE,
-        FOUR_OF_A_KIND,
-        STRAIGHT_FLUSH,
-        ROYAL_FLUSH
+        HIGH_CARD("High Card"),
+        ONE_PAIR("One Pair"),
+        TWO_PAIR("Two Pair"),
+        THREE_OF_A_KIND("Three of a Kind"),
+        STRAIGHT("Straight"),
+        FLUSH("Flush"),
+        FULL_HOUSE("Full House"),
+        FOUR_OF_A_KIND("Four of a Kind"),
+        STRAIGHT_FLUSH("Straight Flush"),
+        ROYAL_FLUSH("Royal Flush");
+
+        private final String displayName;
+
+        HandType(String displayName) {
+            this.displayName = displayName;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
     }
 
     private final HandType handType;
-    private final List<Value> rankValues; // e.g., for Two Pair (A, A, 5, 5, K), this would be [ACE, FIVE]
-    private final List<Value> kickerValues; // e.g., for the above, this would be [KING]
+    private final List<Value> rankValues;
+    private final List<Value> kickerValues;
 
     public HandRanking(HandType handType, List<Value> rankValues, List<Value> kickerValues) {
         this.handType = handType;
-        // Sort values descending for consistent comparison
         this.rankValues = rankValues.stream().sorted(Comparator.reverseOrder()).toList();
         this.kickerValues = kickerValues.stream().sorted(Comparator.reverseOrder()).toList();
     }
@@ -43,16 +52,88 @@ public class HandRanking implements Comparable<HandRanking> {
         return kickerValues;
     }
 
+    
+    public String getDescription() {
+        StringBuilder sb = new StringBuilder(handType.getDisplayName());
+        
+        switch (handType) {
+            case HIGH_CARD:
+                if (!kickerValues.isEmpty()) {
+                    sb.append(" (").append(formatValue(kickerValues.get(0))).append(" high)");
+                }
+                break;
+            case ONE_PAIR:
+                if (!rankValues.isEmpty()) {
+                    sb.append(" of ").append(formatValue(rankValues.get(0))).append("s");
+                }
+                break;
+            case TWO_PAIR:
+                if (rankValues.size() >= 2) {
+                    sb.append(" (").append(formatValue(rankValues.get(0))).append("s and ")
+                      .append(formatValue(rankValues.get(1))).append("s)");
+                }
+                break;
+            case THREE_OF_A_KIND:
+                if (!rankValues.isEmpty()) {
+                    sb.append(" (").append(formatValue(rankValues.get(0))).append("s)");
+                }
+                break;
+            case STRAIGHT:
+            case STRAIGHT_FLUSH:
+                if (!rankValues.isEmpty()) {
+                    sb.append(" (").append(formatValue(rankValues.get(0))).append(" high)");
+                }
+                break;
+            case FLUSH:
+                if (!kickerValues.isEmpty()) {
+                    sb.append(" (").append(formatValue(kickerValues.get(0))).append(" high)");
+                }
+                break;
+            case FULL_HOUSE:
+                if (rankValues.size() >= 2) {
+                    sb.append(" (").append(formatValue(rankValues.get(0))).append("s full of ")
+                      .append(formatValue(rankValues.get(1))).append("s)");
+                }
+                break;
+            case FOUR_OF_A_KIND:
+                if (!rankValues.isEmpty()) {
+                    sb.append(" (").append(formatValue(rankValues.get(0))).append("s)");
+                }
+                break;
+            case ROYAL_FLUSH:
+                
+                break;
+        }
+        
+        return sb.toString();
+    }
+
+    private String formatValue(Value value) {
+        return switch (value) {
+            case ACE -> "Ace";
+            case KING -> "King";
+            case QUEEN -> "Queen";
+            case JACK -> "Jack";
+            case TEN -> "Ten";
+            case NINE -> "Nine";
+            case EIGHT -> "Eight";
+            case SEVEN -> "Seven";
+            case SIX -> "Six";
+            case FIVE -> "Five";
+            case FOUR -> "Four";
+            case THREE -> "Three";
+            case TWO -> "Two";
+        };
+    }
+
     @Override
     public int compareTo(HandRanking other) {
-        // First, compare by the hand type enum's ordinal. Higher is better.
         int typeComparison = Integer.compare(this.handType.ordinal(), other.handType.ordinal());
         if (typeComparison != 0) {
             return typeComparison;
         }
 
-        // If hand types are the same, compare by the primary rank values.
-        for (int i = 0; i < this.rankValues.size(); i++) {
+        for (int i = 0; i < Math.min(this.rankValues.size(), other.rankValues.size()); i++) {
             int rankValueComparison = Integer.compare(
                 this.rankValues.get(i).ordinal(),
                 other.rankValues.get(i).ordinal()
@@ -62,8 +143,7 @@ public class HandRanking implements Comparable<HandRanking> {
             }
         }
 
-        // If rank values are also the same, compare by kickers.
-        for (int i = 0; i < this.kickerValues.size(); i++) {
+        for (int i = 0; i < Math.min(this.kickerValues.size(), other.kickerValues.size()); i++) {
             int kickerComparison = Integer.compare(
                 this.kickerValues.get(i).ordinal(),
                 other.kickerValues.get(i).ordinal()
@@ -73,7 +153,6 @@ public class HandRanking implements Comparable<HandRanking> {
             }
         }
 
-        // If all are equal, it's a tie.
         return 0;
     }
 
@@ -94,10 +173,6 @@ public class HandRanking implements Comparable<HandRanking> {
 
     @Override
     public String toString() {
-        return "HandRanking{" +
-                "handType=" + handType +
-                ", rankValues=" + rankValues +
-                ", kickerValues=" + kickerValues +
-                '}';
+        return getDescription();
     }
 }

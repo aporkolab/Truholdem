@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    
+    <changeSet id="04-create-hand-history" author="truholdem">
+        <createTable tableName="hand_histories">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="game_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="hand_number" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="played_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="small_blind" type="INT"/>
+            <column name="big_blind" type="INT"/>
+            <column name="dealer_position" type="INT"/>
+            <column name="winner_name" type="VARCHAR(100)"/>
+            <column name="winning_hand_description" type="VARCHAR(255)"/>
+            <column name="final_pot" type="INT"/>
+        </createTable>
+
+        <createIndex indexName="idx_hand_history_game" tableName="hand_histories">
+            <column name="game_id"/>
+        </createIndex>
+
+        <createIndex indexName="idx_hand_history_played_at" tableName="hand_histories">
+            <column name="played_at"/>
+        </createIndex>
+    </changeSet>
+
+    
+    <changeSet id="04-create-hand-history-players" author="truholdem">
+        <createTable tableName="hand_history_players">
+            <column name="hand_history_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="player_id" type="UUID"/>
+            <column name="player_name" type="VARCHAR(100)"/>
+            <column name="starting_chips" type="INT"/>
+            <column name="seat_position" type="INT"/>
+            <column name="hole_card1_suit" type="VARCHAR(20)"/>
+            <column name="hole_card1_value" type="VARCHAR(20)"/>
+            <column name="hole_card2_suit" type="VARCHAR(20)"/>
+            <column name="hole_card2_value" type="VARCHAR(20)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="hand_history_players"
+            baseColumnNames="hand_history_id"
+            constraintName="fk_hand_history_players"
+            referencedTableName="hand_histories"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    
+    <changeSet id="04-create-hand-history-actions" author="truholdem">
+        <createTable tableName="hand_history_actions">
+            <column name="hand_history_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="action_order" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="player_id" type="UUID"/>
+            <column name="player_name" type="VARCHAR(100)"/>
+            <column name="action" type="VARCHAR(20)"/>
+            <column name="amount" type="INT"/>
+            <column name="phase" type="VARCHAR(20)"/>
+            <column name="timestamp" type="TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="hand_history_actions"
+            baseColumnNames="hand_history_id"
+            constraintName="fk_hand_history_actions"
+            referencedTableName="hand_histories"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    
+    <changeSet id="04-create-hand-history-board" author="truholdem">
+        <createTable tableName="hand_history_board">
+            <column name="hand_history_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="card_order" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="suit" type="VARCHAR(20)"/>
+            <column name="value" type="VARCHAR(20)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="hand_history_board"
+            baseColumnNames="hand_history_id"
+            constraintName="fk_hand_history_board"
+            referencedTableName="hand_histories"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    
+    <changeSet id="04-create-player-statistics" author="truholdem">
+        <createTable tableName="player_statistics">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="UUID">
+                <constraints unique="true"/>
+            </column>
+            <column name="player_name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            
+            
+            <column name="hands_played" type="INT" defaultValue="0"/>
+            <column name="hands_won" type="INT" defaultValue="0"/>
+            <column name="total_winnings" type="DECIMAL(19,2)" defaultValue="0"/>
+            <column name="total_losses" type="DECIMAL(19,2)" defaultValue="0"/>
+            <column name="biggest_pot_won" type="INT" defaultValue="0"/>
+            
+            
+            <column name="hands_played_from_button" type="INT" defaultValue="0"/>
+            <column name="hands_played_from_blinds" type="INT" defaultValue="0"/>
+            
+            
+            <column name="hands_voluntarily_put_in_pot" type="INT" defaultValue="0"/>
+            <column name="hands_raised_pre_flop" type="INT" defaultValue="0"/>
+            
+            
+            <column name="total_bets" type="INT" defaultValue="0"/>
+            <column name="total_raises" type="INT" defaultValue="0"/>
+            <column name="total_calls" type="INT" defaultValue="0"/>
+            <column name="total_folds" type="INT" defaultValue="0"/>
+            <column name="total_checks" type="INT" defaultValue="0"/>
+            
+            
+            <column name="hands_went_to_showdown" type="INT" defaultValue="0"/>
+            <column name="showdowns_won" type="INT" defaultValue="0"/>
+            
+            
+            <column name="times_all_in" type="INT" defaultValue="0"/>
+            <column name="all_ins_won" type="INT" defaultValue="0"/>
+            
+            
+            <column name="current_win_streak" type="INT" defaultValue="0"/>
+            <column name="longest_win_streak" type="INT" defaultValue="0"/>
+            <column name="current_lose_streak" type="INT" defaultValue="0"/>
+            <column name="longest_lose_streak" type="INT" defaultValue="0"/>
+            
+            
+            <column name="first_hand_played" type="TIMESTAMP"/>
+            <column name="last_hand_played" type="TIMESTAMP"/>
+            <column name="total_sessions" type="INT" defaultValue="0"/>
+        </createTable>
+
+        <createIndex indexName="idx_player_stats_user" tableName="player_statistics">
+            <column name="user_id"/>
+        </createIndex>
+
+        <createIndex indexName="idx_player_stats_name" tableName="player_statistics">
+            <column name="player_name"/>
+        </createIndex>
+    </changeSet>
+
+    
+    <changeSet id="04-create-achievements" author="truholdem">
+        <createTable tableName="achievements">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="code" type="VARCHAR(50)">
+                <constraints unique="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(500)"/>
+            <column name="icon" type="VARCHAR(50)"/>
+            <column name="category" type="VARCHAR(50)"/>
+            <column name="points" type="INT" defaultValue="0"/>
+            <column name="requirement_type" type="VARCHAR(50)"/>
+            <column name="requirement_value" type="INT"/>
+            <column name="is_hidden" type="BOOLEAN" defaultValue="false"/>
+        </createTable>
+    </changeSet>
+
+    
+    <changeSet id="04-create-player-achievements" author="truholdem">
+        <createTable tableName="player_achievements">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="player_stats_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="achievement_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="unlocked_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="progress" type="INT" defaultValue="0"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="player_achievements"
+            baseColumnNames="player_stats_id"
+            constraintName="fk_player_achievements_stats"
+            referencedTableName="player_statistics"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+            baseTableName="player_achievements"
+            baseColumnNames="achievement_id"
+            constraintName="fk_player_achievements_achievement"
+            referencedTableName="achievements"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <addUniqueConstraint
+            tableName="player_achievements"
+            columnNames="player_stats_id, achievement_id"
+            constraintName="uk_player_achievement"/>
+    </changeSet>
+
+    
+    <changeSet id="04-create-tournaments" author="truholdem">
+        <createTable tableName="tournaments">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(20)" defaultValue="REGISTERING"/>
+            <column name="tournament_type" type="VARCHAR(20)"/>
+            <column name="buy_in" type="INT"/>
+            <column name="starting_chips" type="INT"/>
+            <column name="min_players" type="INT" defaultValue="2"/>
+            <column name="max_players" type="INT" defaultValue="9"/>
+            <column name="current_level" type="INT" defaultValue="1"/>
+            <column name="small_blind" type="INT"/>
+            <column name="big_blind" type="INT"/>
+            <column name="blind_increase_minutes" type="INT" defaultValue="15"/>
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="started_at" type="TIMESTAMP"/>
+            <column name="ended_at" type="TIMESTAMP"/>
+            <column name="prize_pool" type="INT" defaultValue="0"/>
+        </createTable>
+    </changeSet>
+
+    
+    <changeSet id="04-create-tournament-registrations" author="truholdem">
+        <createTable tableName="tournament_registrations">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="tournament_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="player_name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="UUID"/>
+            <column name="chips" type="INT"/>
+            <column name="finish_position" type="INT"/>
+            <column name="prize_won" type="INT" defaultValue="0"/>
+            <column name="is_eliminated" type="BOOLEAN" defaultValue="false"/>
+            <column name="registered_at" type="TIMESTAMP"/>
+            <column name="eliminated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="tournament_registrations"
+            baseColumnNames="tournament_id"
+            constraintName="fk_tournament_registrations"
+            referencedTableName="tournaments"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    
+    <changeSet id="04-insert-default-achievements" author="truholdem">
+        <insert tableName="achievements">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="FIRST_WIN"/>
+            <column name="name" value="First Victory"/>
+            <column name="description" value="Win your first hand"/>
+            <column name="icon" value="🏆"/>
+            <column name="category" value="BEGINNER"/>
+            <column name="points" value="10"/>
+            <column name="requirement_type" value="HANDS_WON"/>
+            <column name="requirement_value" value="1"/>
+        </insert>
+        <insert tableName="achievements">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="WINNER_10"/>
+            <column name="name" value="Getting Started"/>
+            <column name="description" value="Win 10 hands"/>
+            <column name="icon" value="⭐"/>
+            <column name="category" value="BEGINNER"/>
+            <column name="points" value="25"/>
+            <column name="requirement_type" value="HANDS_WON"/>
+            <column name="requirement_value" value="10"/>
+        </insert>
+        <insert tableName="achievements">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="WINNER_100"/>
+            <column name="name" value="Consistent Winner"/>
+            <column name="description" value="Win 100 hands"/>
+            <column name="icon" value="🌟"/>
+            <column name="category" value="INTERMEDIATE"/>
+            <column name="points" value="100"/>
+            <column name="requirement_type" value="HANDS_WON"/>
+            <column name="requirement_value" value="100"/>
+        </insert>
+        <insert tableName="achievements">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="HIGH_ROLLER"/>
+            <column name="name" value="High Roller"/>
+            <column name="description" value="Win a pot of 1000+ chips"/>
+            <column name="icon" value="💰"/>
+            <column name="category" value="WEALTH"/>
+            <column name="points" value="50"/>
+            <column name="requirement_type" value="BIGGEST_POT"/>
+            <column name="requirement_value" value="1000"/>
+        </insert>
+        <insert tableName="achievements">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="STREAK_5"/>
+            <column name="name" value="On Fire"/>
+            <column name="description" value="Win 5 hands in a row"/>
+            <column name="icon" value="🔥"/>
+            <column name="category" value="STREAK"/>
+            <column name="points" value="75"/>
+            <column name="requirement_type" value="WIN_STREAK"/>
+            <column name="requirement_value" value="5"/>
+        </insert>
+        <insert tableName="achievements">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="STREAK_10"/>
+            <column name="name" value="Unstoppable"/>
+            <column name="description" value="Win 10 hands in a row"/>
+            <column name="icon" value="💥"/>
+            <column name="category" value="STREAK"/>
+            <column name="points" value="200"/>
+            <column name="requirement_type" value="WIN_STREAK"/>
+            <column name="requirement_value" value="10"/>
+        </insert>
+        <insert tableName="achievements">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="ALL_IN_SURVIVOR"/>
+            <column name="name" value="All-In Survivor"/>
+            <column name="description" value="Win 5 all-in situations"/>
+            <column name="icon" value="🎲"/>
+            <column name="category" value="RISK"/>
+            <column name="points" value="50"/>
+            <column name="requirement_type" value="ALL_INS_WON"/>
+            <column name="requirement_value" value="5"/>
+        </insert>
+        <insert tableName="achievements">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="MARATHON"/>
+            <column name="name" value="Marathon Player"/>
+            <column name="description" value="Play 500 hands"/>
+            <column name="icon" value="🏃"/>
+            <column name="category" value="DEDICATION"/>
+            <column name="points" value="150"/>
+            <column name="requirement_type" value="HANDS_PLAYED"/>
+            <column name="requirement_value" value="500"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

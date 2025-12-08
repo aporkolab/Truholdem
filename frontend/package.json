@@ -1,15 +1,22 @@
 {
   "name": "texas-holdem-frontend",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "scripts": {
     "ng": "ng",
     "start": "npx serve -s dist/texas-holdem-frontend",
+    "dev": "ng serve",
     "build": "ng build --configuration=production",
     "build:prod": "ng build --configuration=production",
     "watch": "ng build --watch --configuration=development",
     "test": "ng test",
     "test:ci": "ng test --watch=false --browsers=ChromeHeadless --code-coverage",
-    "lint": "ng lint"
+    "test:coverage": "ng test --watch=false --code-coverage",
+    "lint": "ng lint",
+    "lint:fix": "ng lint --fix",
+    "e2e": "cypress open",
+    "e2e:headless": "cypress run",
+    "e2e:ci": "cypress run --browser chrome --headless",
+    "test:all": "npm run test:ci && npm run e2e:ci"
   },
   "private": true,
   "homepage": "https://www.truholdem.aporkolab.com",
@@ -36,6 +43,7 @@
     "@types/bootstrap": "^5.2.10",
     "@types/jasmine": "~5.1.4",
     "angular-eslint": "20.2.0",
+    "cypress": "^13.15.0",
     "eslint": "^9.33.0",
     "jasmine-core": "~5.2.0",
     "karma": "~6.4.4",

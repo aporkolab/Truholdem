@@ -9,6 +9,9 @@ import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { GameTableComponent } from './game-table/game-table.component';
 import { RaiseInputComponent } from './raise-input/raise-input.component';
+import { LeaderboardComponent } from './leaderboard/leaderboard.component';
+import { SettingsComponent } from './settings/settings.component';
+import { HandReplayComponent } from './hand-replay/hand-replay.component';
 
 
 @NgModule({
@@ -22,7 +25,10 @@ import { RaiseInputComponent } from './raise-input/raise-input.component';
         HttpClientModule,
         RegisterPlayersComponent,
         GameTableComponent,
-        RaiseInputComponent
+        RaiseInputComponent,
+        LeaderboardComponent,
+        SettingsComponent,
+        HandReplayComponent
     ],
     providers: [],
     bootstrap: [AppComponent]

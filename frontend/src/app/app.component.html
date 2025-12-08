@@ -1,7 +1,37 @@
-<div>
-	<!-- Regisztrációs komponens -->
-	<app-register-players *ngIf="!gameStarted"></app-register-players>
+<div class="app-container">
+  
+  <nav class="main-nav">
+    <div class="nav-brand">
+      <span class="brand-icon">🃏</span>
+      <span class="brand-text">TruHoldem</span>
+    </div>
+    
+    <div class="nav-links">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+        🎮 Play
+      </a>
+      <a routerLink="/leaderboard" routerLinkActive="active">
+        🏆 Leaderboard
+      </a>
+      <a routerLink="/settings" routerLinkActive="active">
+        ⚙️ Settings
+      </a>
+    </div>
 
-	<!-- Játéktér komponens -->
-	<app-game-table *ngIf="gameStarted"></app-game-table>
+    <div class="nav-actions">
+      <button class="sound-toggle" (click)="toggleSound()" [title]="soundEnabled ? 'Mute' : 'Unmute'">
+        {{ soundEnabled ? '🔊' : '🔇' }}
+      </button>
+    </div>
+  </nav>
+
+  
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+
+  
+  <footer class="main-footer">
+    <span>TruHoldem v2.0 - Texas Hold'em Poker Simulator</span>
+  </footer>
 </div>

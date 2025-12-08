@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    
+    
+    <changeSet id="05-hand-history-table" author="truholdem">
+        <createTable tableName="hand_histories">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="game_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="hand_number" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="played_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="small_blind" type="INT"/>
+            <column name="big_blind" type="INT"/>
+            <column name="dealer_position" type="INT"/>
+            <column name="winner_name" type="VARCHAR(255)"/>
+            <column name="winning_hand_description" type="VARCHAR(500)"/>
+            <column name="final_pot" type="INT"/>
+        </createTable>
+        
+        <createIndex tableName="hand_histories" indexName="idx_hand_history_game">
+            <column name="game_id"/>
+        </createIndex>
+        
+        <createIndex tableName="hand_histories" indexName="idx_hand_history_played_at">
+            <column name="played_at"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="05-hand-history-players" author="truholdem">
+        <createTable tableName="hand_history_players">
+            <column name="hand_history_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="player_id" type="UUID"/>
+            <column name="player_name" type="VARCHAR(255)"/>
+            <column name="starting_chips" type="INT"/>
+            <column name="seat_position" type="INT"/>
+            <column name="hole_card1_suit" type="VARCHAR(20)"/>
+            <column name="hole_card1_value" type="VARCHAR(20)"/>
+            <column name="hole_card2_suit" type="VARCHAR(20)"/>
+            <column name="hole_card2_value" type="VARCHAR(20)"/>
+        </createTable>
+        
+        <addForeignKeyConstraint 
+            baseTableName="hand_history_players" 
+            baseColumnNames="hand_history_id"
+            referencedTableName="hand_histories"
+            referencedColumnNames="id"
+            constraintName="fk_hand_history_players"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet id="05-hand-history-actions" author="truholdem">
+        <createTable tableName="hand_history_actions">
+            <column name="hand_history_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="action_order" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="player_id" type="UUID"/>
+            <column name="player_name" type="VARCHAR(255)"/>
+            <column name="action" type="VARCHAR(50)"/>
+            <column name="amount" type="INT"/>
+            <column name="phase" type="VARCHAR(50)"/>
+            <column name="timestamp" type="TIMESTAMP"/>
+        </createTable>
+        
+        <addForeignKeyConstraint 
+            baseTableName="hand_history_actions" 
+            baseColumnNames="hand_history_id"
+            referencedTableName="hand_histories"
+            referencedColumnNames="id"
+            constraintName="fk_hand_history_actions"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet id="05-hand-history-board" author="truholdem">
+        <createTable tableName="hand_history_board">
+            <column name="hand_history_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="card_order" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="suit" type="VARCHAR(20)"/>
+            <column name="value" type="VARCHAR(20)"/>
+        </createTable>
+        
+        <addForeignKeyConstraint 
+            baseTableName="hand_history_board" 
+            baseColumnNames="hand_history_id"
+            referencedTableName="hand_histories"
+            referencedColumnNames="id"
+            constraintName="fk_hand_history_board"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    
+    
+    <changeSet id="05-player-statistics-table" author="truholdem">
+        <createTable tableName="player_statistics">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="UUID">
+                <constraints unique="true"/>
+            </column>
+            <column name="player_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            
+            
+            <column name="hands_played" type="INT" defaultValue="0"/>
+            <column name="hands_won" type="INT" defaultValue="0"/>
+            <column name="total_winnings" type="DECIMAL(19,2)" defaultValue="0"/>
+            <column name="total_losses" type="DECIMAL(19,2)" defaultValue="0"/>
+            <column name="biggest_pot_won" type="INT" defaultValue="0"/>
+            
+            
+            <column name="hands_played_from_button" type="INT" defaultValue="0"/>
+            <column name="hands_played_from_blinds" type="INT" defaultValue="0"/>
+            
+            
+            <column name="hands_voluntarily_put_in_pot" type="INT" defaultValue="0"/>
+            <column name="hands_raised_pre_flop" type="INT" defaultValue="0"/>
+            
+            
+            <column name="total_bets" type="INT" defaultValue="0"/>
+            <column name="total_raises" type="INT" defaultValue="0"/>
+            <column name="total_calls" type="INT" defaultValue="0"/>
+            <column name="total_folds" type="INT" defaultValue="0"/>
+            <column name="total_checks" type="INT" defaultValue="0"/>
+            
+            
+            <column name="hands_went_to_showdown" type="INT" defaultValue="0"/>
+            <column name="showdowns_won" type="INT" defaultValue="0"/>
+            
+            
+            <column name="times_all_in" type="INT" defaultValue="0"/>
+            <column name="all_ins_won" type="INT" defaultValue="0"/>
+            
+            
+            <column name="current_win_streak" type="INT" defaultValue="0"/>
+            <column name="longest_win_streak" type="INT" defaultValue="0"/>
+            <column name="current_lose_streak" type="INT" defaultValue="0"/>
+            <column name="longest_lose_streak" type="INT" defaultValue="0"/>
+            
+            
+            <column name="first_hand_played" type="TIMESTAMP"/>
+            <column name="last_hand_played" type="TIMESTAMP"/>
+            <column name="total_sessions" type="INT" defaultValue="0"/>
+        </createTable>
+        
+        <createIndex tableName="player_statistics" indexName="idx_player_stats_user">
+            <column name="user_id"/>
+        </createIndex>
+        
+        <createIndex tableName="player_statistics" indexName="idx_player_stats_name">
+            <column name="player_name"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
