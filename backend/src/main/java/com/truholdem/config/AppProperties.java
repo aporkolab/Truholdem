@@ -1,5 +1,7 @@
 package com.truholdem.config;
 
+import java.util.List;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
@@ -8,7 +10,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import java.util.List;
 
 @Component
 @ConfigurationProperties(prefix = "app")
@@ -31,7 +32,7 @@ public class AppProperties {
     @NotNull
     private final Game game = new Game();
 
-    // Getters
+    
     public Jwt getJwt() {
         return jwt;
     }
@@ -58,7 +59,7 @@ public class AppProperties {
         @Min(1)
         private long refreshExpiration;
 
-        // Getters and setters
+        
         public String getSecret() {
             return secret;
         }
@@ -96,7 +97,7 @@ public class AppProperties {
 
         private boolean allowCredentials = true;
 
-        // Getters and setters
+        
         public List<String> getAllowedOrigins() {
             return allowedOrigins;
         }
@@ -134,7 +135,7 @@ public class AppProperties {
         @NotNull
         private List<String> allowedOrigins;
 
-        // Getters and setters
+        
         public List<String> getAllowedOrigins() {
             return allowedOrigins;
         }
@@ -161,9 +162,9 @@ public class AppProperties {
         private int minPlayers;
 
         @Min(100)
-        private long botThinkTime;
+        private long botThinkTime = 100;
 
-        // Getters and setters
+        
         public int getDefaultChips() {
             return defaultChips;
         }

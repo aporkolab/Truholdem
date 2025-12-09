@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.truholdem.config.TestConfig;
+import com.truholdem.config.TestSecurityConfig;
 import com.truholdem.model.Game;
 import com.truholdem.model.HandHistory;
 import com.truholdem.model.Player;
@@ -45,7 +46,7 @@ import com.truholdem.service.PokerGameService;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-@Import(TestConfig.class)
+@Import({ TestConfig.class, TestSecurityConfig.class })
 @DisplayName("Statistics & History Controller Integration Tests")
 @Disabled("Spring Context issues - requires full infrastructure")
 class StatisticsHistoryIntegrationTest {

@@ -1,19 +1,36 @@
 package com.truholdem.service;
 
-import com.truholdem.dto.ShowdownResult;
-import com.truholdem.dto.ShowdownResult.WinnerInfo;
-import com.truholdem.model.*;
-import com.truholdem.repository.GameRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.truholdem.dto.ShowdownResult;
+import com.truholdem.dto.ShowdownResult.WinnerInfo;
+import com.truholdem.model.Card;
+import com.truholdem.model.Deck;
+import com.truholdem.model.Game;
+import com.truholdem.model.GamePhase;
+import com.truholdem.model.Player;
+import com.truholdem.model.PlayerAction;
+import com.truholdem.model.PlayerInfo;
+import com.truholdem.repository.GameRepository;
+
 @Service
-@Transactional
+@Transactional(isolation = Isolation.READ_COMMITTED)
 public class PokerGameService {
 
     private static final Logger logger = LoggerFactory.getLogger(PokerGameService.class);
@@ -23,97 +40,106 @@ public class PokerGameService {
     private final HandHistoryService handHistoryService;
     private final PlayerStatisticsService playerStatisticsService;
     private final GameNotificationService notificationService;
+    private final AdvancedBotAIService botAIService;
+    private final GameMetricsService metricsService;
 
     public PokerGameService(
-            GameRepository gameRepository, 
+            GameRepository gameRepository,
             HandEvaluator handEvaluator,
             HandHistoryService handHistoryService,
             PlayerStatisticsService playerStatisticsService,
-            GameNotificationService notificationService) {
+            GameNotificationService notificationService,
+            AdvancedBotAIService botAIService,
+            GameMetricsService metricsService) {
         this.gameRepository = gameRepository;
         this.handEvaluator = handEvaluator;
         this.handHistoryService = handHistoryService;
         this.playerStatisticsService = playerStatisticsService;
         this.notificationService = notificationService;
+        this.botAIService = botAIService;
+        this.metricsService = metricsService;
     }
 
-    
     public Game createNewGame(List<PlayerInfo> playersInfo) {
-        validatePlayerCount(playersInfo);
+        return metricsService.timeGameCreation(() -> {
+            validatePlayerCount(playersInfo);
 
-        Game game = new Game();
-        Deck deck = new Deck();
-        deck.shuffle();
+            Game game = new Game();
+            Deck deck = new Deck();
+            deck.shuffle();
 
-        
-        for (int i = 0; i < playersInfo.size(); i++) {
-            PlayerInfo info = playersInfo.get(i);
-            Player player = new Player(info.getName(), info.getStartingChips(), info.isBot());
-            player.setSeatPosition(i);
-            game.addPlayer(player);
-            
-            
-            playerStatisticsService.startSession(info.getName());
-        }
+            for (int i = 0; i < playersInfo.size(); i++) {
+                PlayerInfo info = playersInfo.get(i);
+                Player player = new Player(info.getName(), info.getStartingChips(), info.isBot());
+                player.setSeatPosition(i);
+                game.addPlayer(player);
 
-        
-        dealHoleCards(game, deck);
+                playerStatisticsService.startSession(info.getName());
+            }
 
-        game.setDeck(deck.getCards());
-        postBlinds(game);
-        game.setPhase(GamePhase.PRE_FLOP);
+            dealHoleCards(game, deck);
 
-        Game savedGame = gameRepository.save(game);
-        
-        
-        handHistoryService.startRecording(savedGame);
-        
-        
-        notificationService.broadcastGameUpdate(savedGame);
+            game.setDeck(deck.getCards());
+            postBlinds(game);
+            game.setPhase(GamePhase.PRE_FLOP);
 
-        logger.info("Created new game {} with {} players", savedGame.getId(), playersInfo.size());
-        return savedGame;
+            Game savedGame = gameRepository.save(game);
+
+            handHistoryService.startRecording(savedGame);
+
+            notificationService.broadcastGameUpdate(savedGame);
+
+            metricsService.incrementGamesCreated();
+            metricsService.setActivePlayers(playersInfo.size());
+
+            logger.info("Created new game {} with {} players", savedGame.getId(), playersInfo.size());
+            return savedGame;
+        });
     }
 
-    
+    @CacheEvict(value = "games", key = "#gameId")
     public Game playerAct(UUID gameId, UUID playerId, PlayerAction action, int amount) {
-        Game game = findGameById(gameId);
-        Player player = findPlayerInGame(game, playerId);
+        return metricsService.timeActionProcessing(() -> {
+            Game game = findGameById(gameId);
+            Player player = findPlayerInGame(game, playerId);
 
-        validatePlayerTurn(game, playerId);
-        validatePlayerCanAct(player);
+            validatePlayerTurn(game, playerId);
+            validatePlayerCanAct(player);
 
-        logger.debug("Player {} performing action {} with amount {}", player.getName(), action, amount);
+            logger.debug("Player {} performing action {} with amount {}", player.getName(), action, amount);
 
-        int actualAmount = 0;
-        switch (action) {
-            case FOLD -> handleFold(game, player);
-            case CHECK -> handleCheck(game, player);
-            case CALL -> actualAmount = handleCall(game, player);
-            case BET -> actualAmount = handleBet(game, player, amount);
-            case RAISE -> actualAmount = handleRaise(game, player, amount);
-        }
+            metricsService.recordPlayerAction(action.name());
 
-        player.setHasActed(true);
-        
-        
-        handHistoryService.recordAction(gameId, player, action, actualAmount, game.getPhase());
-        playerStatisticsService.recordAction(player.getName(), action.name());
-        
-        
-        if (player.isAllIn()) {
-            playerStatisticsService.recordAllIn(player.getName());
-        }
-        
-        
-        notificationService.broadcastPlayerAction(game, player, action.name(), actualAmount);
-        
-        advanceGame(game);
+            int actualAmount = 0;
+            switch (action) {
+                case FOLD -> {
+                    handleFold(game, player);
+                    metricsService.incrementFolds();
+                }
+                case CHECK -> handleCheck(game, player);
+                case CALL -> actualAmount = handleCall(game, player);
+                case BET -> actualAmount = handleBet(game, player, amount);
+                case RAISE -> actualAmount = handleRaise(game, player, amount);
+            }
 
-        return gameRepository.save(game);
+            player.setHasActed(true);
+
+            handHistoryService.recordAction(gameId, player, action, actualAmount, game.getPhase());
+            playerStatisticsService.recordAction(player.getName(), action.name());
+
+            if (player.isAllIn()) {
+                playerStatisticsService.recordAllIn(player.getName());
+            }
+
+            notificationService.broadcastPlayerAction(game, player, action.name(), actualAmount);
+
+            advanceGame(game);
+
+            return gameRepository.save(game);
+        });
     }
 
-    
+    @CacheEvict(value = "games", key = "#gameId")
     public Game executeBotAction(UUID gameId, UUID botId) {
         Game game = findGameById(gameId);
         Player bot = findPlayerInGame(game, botId);
@@ -124,26 +150,33 @@ public class PokerGameService {
 
         validatePlayerTurn(game, botId);
 
-        PlayerAction action = determineBotAction(game, bot);
-        int amount = 0;
+        
+        AdvancedBotAIService.BotDecision decision = botAIService.decide(game, bot);
 
-        if (action == PlayerAction.RAISE || action == PlayerAction.BET) {
-            amount = calculateBotBetAmount(game, bot);
+        if (decision == null) {
+            
+            decision = new AdvancedBotAIService.BotDecision(
+                    PlayerAction.CHECK,
+                    0,
+                    "fallback-null-decision");
         }
 
-        return playerAct(gameId, botId, action, amount);
+        logger.info("Bot {} decided: {} (amount: {}, reason: {})",
+                bot.getName(), decision.action(), decision.amount(), decision.reasoning());
+
+        return playerAct(gameId, botId, decision.action(), decision.amount());
     }
 
-    
+    @Cacheable(value = "games", key = "#gameId", unless = "#result == null")
+    @Transactional(readOnly = true)
     public Optional<Game> getGame(UUID gameId) {
         return gameRepository.findById(gameId);
     }
 
-    
+    @CacheEvict(value = "games", key = "#gameId")
     public Game startNewHand(UUID gameId) {
         Game game = findGameById(gameId);
 
-        
         game.getPlayers().removeIf(p -> p.getChips() <= 0);
 
         if (game.getPlayers().size() < 2) {
@@ -164,8 +197,6 @@ public class PokerGameService {
         return gameRepository.save(game);
     }
 
-    
-
     private void validatePlayerCount(List<PlayerInfo> playersInfo) {
         if (playersInfo == null || playersInfo.size() < 2 || playersInfo.size() > 10) {
             throw new IllegalArgumentException("Player count must be between 2 and 10");
@@ -174,9 +205,25 @@ public class PokerGameService {
 
     private void validatePlayerTurn(Game game, UUID playerId) {
         Player currentPlayer = game.getCurrentPlayer();
-        if (currentPlayer == null || !currentPlayer.getId().equals(playerId)) {
+
+        
+        
+        if (currentPlayer == null)
+            return;
+
+        if (!currentPlayer.getId().equals(playerId)) {
+            
+            if (playerCanLegallyActOutOfTurn(game, playerId)) {
+                return;
+            }
             throw new IllegalStateException("It is not this player's turn");
         }
+    }
+
+    private boolean playerCanLegallyActOutOfTurn(Game game, UUID playerId) {
+        return game.getPlayers().stream()
+                .filter(Player::canAct)
+                .count() == 1;
     }
 
     private void validatePlayerCanAct(Player player) {
@@ -189,7 +236,7 @@ public class PokerGameService {
     }
 
     private void dealHoleCards(Game game, Deck deck) {
-        
+
         for (int round = 0; round < 2; round++) {
             for (Player player : game.getPlayers()) {
                 if (player.getChips() > 0) {
@@ -201,16 +248,15 @@ public class PokerGameService {
 
     private void postBlinds(Game game) {
         List<Player> activePlayers = getActivePlayersInOrder(game);
-        if (activePlayers.size() < 2) return;
+        if (activePlayers.size() < 2)
+            return;
 
         int dealerPos = game.getDealerPosition() % activePlayers.size();
 
-        
         int sbPos = (dealerPos + 1) % activePlayers.size();
-        
+
         int bbPos = (dealerPos + 2) % activePlayers.size();
 
-        
         if (activePlayers.size() == 2) {
             sbPos = dealerPos;
             bbPos = (dealerPos + 1) % 2;
@@ -219,7 +265,6 @@ public class PokerGameService {
         Player sbPlayer = activePlayers.get(sbPos);
         Player bbPlayer = activePlayers.get(bbPos);
 
-        
         int sbAmount = sbPlayer.placeBet(game.getSmallBlind());
         game.setCurrentPot(game.getCurrentPot() + sbAmount);
 
@@ -230,18 +275,16 @@ public class PokerGameService {
         game.setLastRaiseAmount(game.getBigBlind());
         game.setMinRaiseAmount(game.getBigBlind());
 
-        
         int firstToActPos = (bbPos + 1) % activePlayers.size();
         if (activePlayers.size() == 2) {
-            firstToActPos = sbPos; 
+            firstToActPos = sbPos;
         }
 
-        
         Player firstToAct = activePlayers.get(firstToActPos);
         game.setCurrentPlayerIndex(game.getPlayers().indexOf(firstToAct));
 
-        logger.debug("Blinds posted: {} (SB: {}), {} (BB: {})", 
-            sbPlayer.getName(), sbAmount, bbPlayer.getName(), bbAmount);
+        logger.debug("Blinds posted: {} (SB: {}), {} (BB: {})",
+                sbPlayer.getName(), sbAmount, bbPlayer.getName(), bbAmount);
     }
 
     private List<Player> getActivePlayersInOrder(Game game) {
@@ -249,8 +292,6 @@ public class PokerGameService {
                 .filter(p -> !p.isFolded() && p.getChips() >= 0)
                 .toList();
     }
-
-    
 
     private void handleFold(Game game, Player player) {
         player.setFolded(true);
@@ -267,15 +308,15 @@ public class PokerGameService {
     private int handleCall(Game game, Player player) {
         int callAmount = game.getCurrentBet() - player.getBetAmount();
         if (callAmount <= 0) {
-            
+
             return 0;
         }
 
         int actualCall = player.call(game.getCurrentBet());
         game.setCurrentPot(game.getCurrentPot() + actualCall);
 
-        logger.debug("Player {} called {} (total bet: {})", 
-            player.getName(), actualCall, player.getBetAmount());
+        logger.debug("Player {} called {} (total bet: {})",
+                player.getName(), actualCall, player.getBetAmount());
         return actualCall;
     }
 
@@ -304,8 +345,7 @@ public class PokerGameService {
 
         if (raiseAmount < game.getMinRaiseAmount() && player.getChips() > raiseAmount) {
             throw new IllegalArgumentException(
-                "Raise must be at least " + game.getMinRaiseAmount() + " more than current bet"
-            );
+                    "Raise must be at least " + game.getMinRaiseAmount() + " more than current bet");
         }
 
         int toCall = game.getCurrentBet() - player.getBetAmount();
@@ -330,18 +370,15 @@ public class PokerGameService {
         }
     }
 
-    
-
     private void advanceGame(Game game) {
-        
+
         List<Player> playersInHand = game.getPlayersStillInHand();
         if (playersInHand.size() == 1) {
-            
+
             awardPotToSingleWinner(game, playersInHand.get(0));
             return;
         }
 
-        
         if (isBettingRoundComplete(game)) {
             advanceToNextPhase(game);
         } else {
@@ -354,7 +391,6 @@ public class PokerGameService {
                 .filter(p -> !p.isFolded())
                 .toList();
 
-        
         for (Player player : activePlayers) {
             if (!player.isAllIn()) {
                 if (!player.hasActed()) {
@@ -384,19 +420,17 @@ public class PokerGameService {
             }
         }
 
-        
         logger.warn("No active players found to advance to");
     }
 
     private void advanceToNextPhase(Game game) {
-        
+
         for (Player player : game.getPlayers()) {
             player.resetBetForNewRound();
         }
         game.setCurrentBet(0);
         game.setMinRaiseAmount(game.getBigBlind());
 
-        
         setFirstPlayerAfterDealer(game);
 
         switch (game.getPhase()) {
@@ -422,7 +456,6 @@ public class PokerGameService {
             default -> logger.warn("Unexpected phase: {}", game.getPhase());
         }
 
-        
         if (game.getPhase() != GamePhase.SHOWDOWN) {
             checkForAutoAdvance(game);
         }
@@ -443,13 +476,13 @@ public class PokerGameService {
     }
 
     private void checkForAutoAdvance(Game game) {
-        
+
         List<Player> canAct = game.getPlayers().stream()
                 .filter(Player::canAct)
                 .toList();
 
         if (canAct.size() <= 1) {
-            
+
             while (game.getPhase() != GamePhase.SHOWDOWN) {
                 autoAdvancePhase(game);
             }
@@ -478,42 +511,35 @@ public class PokerGameService {
     }
 
     private void dealCommunityCards(Game game, int count) {
-        
+
         if (!game.getDeck().isEmpty()) {
             game.getDeck().remove(0);
         }
 
-        
         for (int i = 0; i < count && !game.getDeck().isEmpty(); i++) {
             game.addCommunityCard(game.getDeck().remove(0));
         }
     }
 
-    
-
-    
     public ShowdownResult resolveShowdown(Game game) {
         logger.info("Resolving showdown for game {}", game.getId());
 
         List<Player> playersInHand = game.getPlayersStillInHand();
         List<WinnerInfo> allWinners = new ArrayList<>();
 
-        
         List<PotInfo> pots = calculatePots(game);
 
-        
         for (PotInfo pot : pots) {
             List<Player> eligiblePlayers = playersInHand.stream()
                     .filter(p -> pot.eligiblePlayerIds.contains(p.getId()))
                     .toList();
 
-            if (eligiblePlayers.isEmpty()) continue;
+            if (eligiblePlayers.isEmpty())
+                continue;
 
-            
             Map<Player, HandRanking> rankings = evaluateHands(eligiblePlayers, game.getCommunityCards());
             List<Player> potWinners = findBestHands(rankings);
 
-            
             int winAmount = pot.amount / potWinners.size();
             int remainder = pot.amount % potWinners.size();
 
@@ -524,25 +550,22 @@ public class PokerGameService {
 
                 HandRanking ranking = rankings.get(winner);
                 allWinners.add(new WinnerInfo(
-                    winner.getId(),
-                    winner.getName(),
-                    amount,
-                    ranking.getDescription(),
-                    new ArrayList<>(winner.getHand())
-                ));
+                        winner.getId(),
+                        winner.getName(),
+                        amount,
+                        ranking.getDescription(),
+                        new ArrayList<>(winner.getHand())));
 
-                
                 playerStatisticsService.recordShowdown(winner.getName(), true);
                 playerStatisticsService.recordWin(winner.getName(), amount);
                 if (winner.isAllIn()) {
                     playerStatisticsService.recordAllInResult(winner.getName(), true);
                 }
 
-                logger.info("Player {} wins {} with {}", 
-                    winner.getName(), amount, ranking.getDescription());
+                logger.info("Player {} wins {} with {}",
+                        winner.getName(), amount, ranking.getDescription());
             }
-            
-            
+
             for (Player loser : eligiblePlayers) {
                 if (!potWinners.contains(loser)) {
                     playerStatisticsService.recordShowdown(loser.getName(), false);
@@ -553,12 +576,11 @@ public class PokerGameService {
             }
         }
 
-        
         game.setFinished(true);
         game.setCurrentPot(0);
 
         if (!allWinners.isEmpty()) {
-            
+
             WinnerInfo mainWinner = allWinners.stream()
                     .max(Comparator.comparingInt(WinnerInfo::getAmountWon))
                     .orElse(allWinners.get(0));
@@ -571,25 +593,23 @@ public class PokerGameService {
 
         int totalWon = allWinners.stream().mapToInt(WinnerInfo::getAmountWon).sum();
         String message = buildWinMessage(allWinners);
-        
+
         ShowdownResult result = new ShowdownResult(allWinners, totalWon, message);
-        
-        
+
         if (!allWinners.isEmpty()) {
             WinnerInfo mainWinner = allWinners.get(0);
             handHistoryService.recordCommunityCards(game.getId(), game.getCommunityCards());
-            handHistoryService.finishRecording(game.getId(), 
-                mainWinner.getPlayerName(), 
-                mainWinner.getHandDescription(), 
-                totalWon);
+            handHistoryService.finishRecording(game.getId(),
+                    mainWinner.getPlayerName(),
+                    mainWinner.getHandDescription(),
+                    totalWon);
         }
-        
+
         notificationService.broadcastShowdown(game, result);
 
         return result;
     }
 
-    
     private void awardPotToSingleWinner(Game game, Player winner) {
         int potAmount = game.getCurrentPot();
         winner.addWinnings(potAmount);
@@ -601,24 +621,20 @@ public class PokerGameService {
         game.setCurrentPot(0);
         game.setFinished(true);
         game.setPhase(GamePhase.SHOWDOWN);
-        
-        
+
         playerStatisticsService.recordWin(winner.getName(), potAmount);
-        
-        
-        handHistoryService.finishRecording(game.getId(), 
-            winner.getName(), 
-            "All opponents folded", 
-            potAmount);
+
+        handHistoryService.finishRecording(game.getId(),
+                winner.getName(),
+                "All opponents folded",
+                potAmount);
 
         logger.info("Player {} wins {} - all opponents folded", winner.getName(), potAmount);
     }
 
-    
     private List<PotInfo> calculatePots(Game game) {
         List<Player> playersInHand = game.getPlayersStillInHand();
 
-        
         List<Integer> allInAmounts = playersInHand.stream()
                 .filter(Player::isAllIn)
                 .map(Player::getTotalBetInRound)
@@ -627,14 +643,13 @@ public class PokerGameService {
                 .toList();
 
         if (allInAmounts.isEmpty()) {
-            
+
             List<UUID> eligibleIds = playersInHand.stream()
                     .map(Player::getId)
                     .toList();
             return List.of(new PotInfo(game.getCurrentPot(), eligibleIds));
         }
 
-        
         List<PotInfo> pots = new ArrayList<>();
         int previousLevel = 0;
 
@@ -658,7 +673,6 @@ public class PokerGameService {
             previousLevel = level;
         }
 
-        
         int maxAllIn = allInAmounts.get(allInAmounts.size() - 1);
         int mainPotAmount = 0;
         List<UUID> mainPotEligible = new ArrayList<>();
@@ -682,25 +696,27 @@ public class PokerGameService {
 
     private Map<Player, HandRanking> evaluateHands(List<Player> players, List<Card> communityCards) {
         Map<Player, HandRanking> rankings = new HashMap<>();
-        
+
         for (Player player : players) {
             HandRanking ranking = handEvaluator.evaluate(player.getHand(), communityCards);
             if (ranking != null) {
                 rankings.put(player, ranking);
             }
         }
-        
+
         return rankings;
     }
 
     private List<Player> findBestHands(Map<Player, HandRanking> rankings) {
-        if (rankings.isEmpty()) return List.of();
+        if (rankings.isEmpty())
+            return List.of();
 
         HandRanking bestRanking = rankings.values().stream()
                 .max(Comparator.naturalOrder())
                 .orElse(null);
 
-        if (bestRanking == null) return List.of();
+        if (bestRanking == null)
+            return List.of();
 
         return rankings.entrySet().stream()
                 .filter(e -> e.getValue().compareTo(bestRanking) == 0)
@@ -709,12 +725,13 @@ public class PokerGameService {
     }
 
     private String buildWinMessage(List<WinnerInfo> winners) {
-        if (winners.isEmpty()) return "No winner";
+        if (winners.isEmpty())
+            return "No winner";
 
         if (winners.size() == 1) {
             WinnerInfo w = winners.get(0);
-            return String.format("%s wins %d with %s", 
-                w.getPlayerName(), w.getAmountWon(), w.getHandDescription());
+            return String.format("%s wins %d with %s",
+                    w.getPlayerName(), w.getAmountWon(), w.getHandDescription());
         }
 
         return winners.stream()
@@ -722,50 +739,8 @@ public class PokerGameService {
                 .collect(Collectors.joining(", "));
     }
 
-    
-
-    private PlayerAction determineBotAction(Game game, Player bot) {
-        int callAmount = game.getCurrentBet() - bot.getBetAmount();
-
-        
-        double random = Math.random();
-
-        if (callAmount == 0) {
-            
-            if (random < 0.3) {
-                return PlayerAction.BET;
-            }
-            return PlayerAction.CHECK;
-        }
-
-        
-        double potOdds = (double) callAmount / (game.getCurrentPot() + callAmount);
-
-        if (potOdds > 0.5 && random < 0.4) {
-            return PlayerAction.FOLD;
-        }
-
-        if (random < 0.15) {
-            return PlayerAction.RAISE;
-        }
-
-        return PlayerAction.CALL;
+    private record PotInfo(int amount, List<UUID> eligiblePlayerIds) {
     }
-
-    private int calculateBotBetAmount(Game game, Player bot) {
-        int minBet = game.getCurrentBet() + game.getMinRaiseAmount();
-        int maxBet = bot.getChips() + bot.getBetAmount();
-
-        
-        int potBet = Math.min(game.getCurrentPot() * 3, maxBet);
-        int betAmount = minBet + (int) (Math.random() * (potBet - minBet + 1));
-
-        return Math.min(betAmount, maxBet);
-    }
-
-    
-
-    private record PotInfo(int amount, List<UUID> eligiblePlayerIds) {}
 
     private Game findGameById(UUID gameId) {
         return gameRepository.findById(gameId)

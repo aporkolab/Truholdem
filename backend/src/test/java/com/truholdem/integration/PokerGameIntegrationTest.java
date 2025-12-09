@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -18,9 +17,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.truholdem.config.TestConfig;
+import com.truholdem.config.TestSecurityConfig;
 import com.truholdem.model.Game;
 import com.truholdem.model.GamePhase;
 import com.truholdem.model.Player;
@@ -35,7 +37,7 @@ import com.truholdem.service.PokerGameService;
 @Transactional
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Poker Game Integration Tests")
-@Disabled("Spring Context issues - requires full infrastructure")
+@Import({ TestConfig.class, TestSecurityConfig.class })
 class PokerGameIntegrationTest {
 
     @Autowired

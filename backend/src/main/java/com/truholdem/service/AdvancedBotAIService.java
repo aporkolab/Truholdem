@@ -386,7 +386,9 @@ public class AdvancedBotAIService {
     
     int calculateBetAmount(Game game, Player bot, double strength) {
         BotPersonality personality = getBotPersonality(bot.getName());
-        return calculateBetAmount(game.getCurrentPot(), strength, personality);
+        int betAmount = calculateBetAmount(game.getCurrentPot(), strength, personality);
+        
+        return Math.min(betAmount, bot.getChips());
     }
 
     private int calculateBetAmount(int pot, double strength, BotPersonality personality) {
@@ -396,7 +398,8 @@ public class AdvancedBotAIService {
         
         betAmount += random.nextInt(Math.max(1, pot / 10));
 
-        return Math.max(1, betAmount);
+        
+        return Math.min(Math.max(1, betAmount), pot);
     }
 
     private int calculateBluffAmount(Game game, Player bot) {

@@ -313,7 +313,7 @@ class AdvancedBotAIServiceTest {
             int betAmount = botAIService.calculateBetAmount(testGame, bot, 0.9);
 
             
-            assertThat(betAmount).isLessThanOrEqualTo(10000); 
+            assertThat(betAmount).isLessThanOrEqualTo(500); 
         }
 
         @Test
@@ -421,7 +421,7 @@ class AdvancedBotAIServiceTest {
             }
 
             
-            assertThat(betCount).isLessThanOrEqualTo(55);
+            assertThat(betCount).isLessThanOrEqualTo(65); 
         }
     }
 

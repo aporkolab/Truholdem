@@ -1,18 +1,65 @@
 package com.truholdem.model;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import jakarta.persistence.*;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderColumn;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 @Entity
-@Table(name = "poker_games")
+@Table(name = "poker_games", indexes = {
+        @Index(name = "idx_game_phase", columnList = "phase"),
+        @Index(name = "idx_game_finished", columnList = "isFinished"),
+        @Index(name = "idx_game_created_at", columnList = "createdAt")
+})
 public class Game {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
+
+    @Version
+    @JsonIgnore
+    private Long version;
+
+    @Column(updatable = false)
+    private Instant createdAt;
+
+    private Instant updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = Instant.now();
+        updatedAt = Instant.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = Instant.now();
+    }
 
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonManagedReference
@@ -55,10 +102,7 @@ public class Game {
 
     private int handNumber;
 
-    
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "game_side_pots", joinColumns = @JoinColumn(name = "game_id"))
-    @OrderColumn
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<SidePot> sidePots = new ArrayList<>();
 
     private int lastRaiseAmount;
@@ -74,8 +118,6 @@ public class Game {
         this.handNumber = 1;
         this.minRaiseAmount = bigBlind;
     }
-
-    
 
     public UUID getId() {
         return id;
@@ -242,8 +284,6 @@ public class Game {
         this.minRaiseAmount = minRaiseAmount;
     }
 
-    
-
     public Player getCurrentPlayer() {
         if (players.isEmpty() || currentPlayerIndex >= players.size()) {
             return null;
@@ -254,13 +294,14 @@ public class Game {
     public List<Player> getActivePlayers() {
         return players.stream()
                 .filter(p -> !p.isFolded() && p.getChips() >= 0)
-                .toList();
+                .collect(Collectors.toCollection(ArrayList::new));
+
     }
 
     public List<Player> getPlayersStillInHand() {
         return players.stream()
                 .filter(p -> !p.isFolded())
-                .toList();
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     public int getTotalPot() {
@@ -285,10 +326,8 @@ public class Game {
         this.minRaiseAmount = bigBlind;
         this.handNumber++;
 
-        
         this.dealerPosition = (this.dealerPosition + 1) % players.size();
 
-        
         for (Player player : players) {
             player.clearHand();
             player.setFolded(false);
@@ -297,5 +336,18 @@ public class Game {
             player.setAllIn(false);
             player.setTotalBetInRound(0);
         }
+    }
+
+    
+    public Long getVersion() {
+        return version;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
     }
 }

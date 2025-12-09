@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -52,16 +54,42 @@ class PokerGameServiceTest {
     @Mock
     private GameNotificationService notificationService;
 
+    @Mock
+    private AdvancedBotAIService advancedBotAIService;
+
+    @Mock
+    private GameMetricsService gameMetricsService;
+
     private PokerGameService pokerGameService;
 
+    @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() {
+        
+        lenient().when(gameMetricsService.timeGameCreation(any(Supplier.class)))
+                .thenAnswer(invocation -> {
+                    Supplier<?> supplier = invocation.getArgument(0);
+                    return supplier.get();
+                });
+        lenient().when(gameMetricsService.timeActionProcessing(any(Supplier.class)))
+                .thenAnswer(invocation -> {
+                    Supplier<?> supplier = invocation.getArgument(0);
+                    return supplier.get();
+                });
+        lenient().when(gameMetricsService.timeShowdown(any(Supplier.class)))
+                .thenAnswer(invocation -> {
+                    Supplier<?> supplier = invocation.getArgument(0);
+                    return supplier.get();
+                });
+        
         pokerGameService = new PokerGameService(
                 gameRepository,
                 handEvaluator,
                 handHistoryService,
                 playerStatisticsService,
-                notificationService);
+                notificationService,
+                advancedBotAIService,
+                gameMetricsService);
     }
 
     @Nested

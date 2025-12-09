@@ -1,6 +1,7 @@
 package com.truholdem.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +14,10 @@ public class Player {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
+
+    @Version
+    @JsonIgnore
+    private Long version;
 
     private String name;
 

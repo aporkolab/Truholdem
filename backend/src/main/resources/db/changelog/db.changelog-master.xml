@@ -10,5 +10,6 @@
     <include file="db/changelog/03-game-enhancements.xml"/>
     <include file="db/changelog/04-advanced-features.xml"/>
     <include file="db/changelog/05-history-and-stats.xml"/>
+    <include file="db/changelog/06-optimistic-locking.xml"/>
 
 </databaseChangeLog>
