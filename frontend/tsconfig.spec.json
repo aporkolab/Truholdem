@@ -3,12 +3,11 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/spec",
-    "types": [
-      "jasmine"
-    ]
+    "types": ["jasmine", "jest", "node"],
+    "typeRoots": ["node_modules/@types"],
+    "skipLibCheck": true,
+    "esModuleInterop": true
   },
-  "include": [
-    "src/**/*.spec.ts",
-    "src/**/*.d.ts"
-  ]
+  "include": ["src/**/*.spec.ts", "src/**/*.d.ts", "setup-jest.ts"],
+  "exclude": ["node_modules/cypress/**/*"]
 }

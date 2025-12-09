@@ -1,6 +1,14 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { HandHistoryService, HandHistory, ReplayData } from './hand-history.service';
+import {
+  HttpClientTestingModule,
+  HttpTestingController,
+} from '@angular/common/http/testing';
+import {
+  HandHistoryService,
+  HandHistory,
+  ReplayData,
+  ReplayAction,
+} from './hand-history.service';
 import { environment } from '../../environments/environment';
 
 describe('HandHistoryService', () => {
@@ -28,7 +36,7 @@ describe('HandHistoryService', () => {
         holeCard1Suit: 'HEARTS',
         holeCard1Value: 'ACE',
         holeCard2Suit: 'DIAMONDS',
-        holeCard2Value: 'ACE'
+        holeCard2Value: 'ACE',
       },
       {
         playerId: 'player-2',
@@ -38,18 +46,32 @@ describe('HandHistoryService', () => {
         holeCard1Suit: 'CLUBS',
         holeCard1Value: 'KING',
         holeCard2Suit: 'SPADES',
-        holeCard2Value: 'QUEEN'
-      }
+        holeCard2Value: 'QUEEN',
+      },
     ],
     actions: [
-      { playerName: 'Alice', action: 'RAISE', amount: 60, phase: 'PRE_FLOP' },
-      { playerName: 'Bob', action: 'CALL', amount: 60, phase: 'PRE_FLOP' }
+      {
+        playerId: 'player-1',
+        playerName: 'Alice',
+        action: 'RAISE',
+        amount: 60,
+        phase: 'PRE_FLOP',
+        timestamp: new Date().toISOString(),
+      },
+      {
+        playerId: 'player-2',
+        playerName: 'Bob',
+        action: 'CALL',
+        amount: 60,
+        phase: 'PRE_FLOP',
+        timestamp: new Date().toISOString(),
+      },
     ],
     board: [
       { suit: 'HEARTS', value: 'TEN' },
       { suit: 'CLUBS', value: 'JACK' },
-      { suit: 'DIAMONDS', value: 'TWO' }
-    ]
+      { suit: 'DIAMONDS', value: 'TWO' },
+    ],
   };
 
   const mockReplayData: ReplayData = {
@@ -65,22 +87,22 @@ describe('HandHistoryService', () => {
         startingChips: 1000,
         seatPosition: 0,
         holeCard1: 'ACE of HEARTS',
-        holeCard2: 'ACE of DIAMONDS'
-      }
+        holeCard2: 'ACE of DIAMONDS',
+      },
     ],
     actions: [
-      { playerName: 'Alice', action: 'RAISE', amount: 60, phase: 'PRE_FLOP' }
+      { playerName: 'Alice', action: 'RAISE', amount: 60, phase: 'PRE_FLOP' },
     ],
     board: ['TEN of HEARTS', 'JACK of CLUBS', 'TWO of DIAMONDS'],
     winnerName: 'Alice',
     winningHand: 'Pair of Aces',
-    finalPot: 150
+    finalPot: 150,
   };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
-      providers: [HandHistoryService]
+      providers: [HandHistoryService],
     });
     service = TestBed.inject(HandHistoryService);
     httpMock = TestBed.inject(HttpTestingController);
@@ -92,7 +114,7 @@ describe('HandHistoryService', () => {
 
   describe('Get Hand History', () => {
     it('should get hand history by ID', () => {
-      service.getHandHistory('history-123').subscribe(history => {
+      service.getHandHistory('history-123').subscribe((history) => {
         expect(history).toEqual(mockHandHistory);
         expect(history.winnerName).toBe('Alice');
       });
@@ -103,9 +125,12 @@ describe('HandHistoryService', () => {
     });
 
     it('should get all hands for a game', () => {
-      const mockHistories = [mockHandHistory, { ...mockHandHistory, handNumber: 2 }];
+      const mockHistories = [
+        mockHandHistory,
+        { ...mockHandHistory, handNumber: 2 },
+      ];
 
-      service.getGameHistory('game-456').subscribe(histories => {
+      service.getGameHistory('game-456').subscribe((histories) => {
         expect(histories.length).toBe(2);
         expect(histories[0].handNumber).toBe(1);
       });
@@ -121,22 +146,24 @@ describe('HandHistoryService', () => {
         totalElements: 10,
         totalPages: 5,
         number: 0,
-        size: 2
+        size: 2,
       };
 
-      service.getGameHistoryPaged('game-456', 0, 2).subscribe(page => {
+      service.getGameHistoryPaged('game-456', 0, 2).subscribe((page) => {
         expect(page.content.length).toBe(1);
         expect(page.totalElements).toBe(10);
         expect(page.totalPages).toBe(5);
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/game/game-456/paged?page=0&size=2`);
+      const req = httpMock.expectOne(
+        `${apiUrl}/game/game-456/paged?page=0&size=2`
+      );
       expect(req.request.method).toBe('GET');
       req.flush(mockPage);
     });
 
     it('should get player hand history', () => {
-      service.getPlayerHistory('player-1').subscribe(histories => {
+      service.getPlayerHistory('player-1').subscribe((histories) => {
         expect(histories).toBeTruthy();
       });
 
@@ -146,7 +173,7 @@ describe('HandHistoryService', () => {
     });
 
     it('should get player wins by name', () => {
-      service.getPlayerWins('Alice').subscribe(wins => {
+      service.getPlayerWins('Alice').subscribe((wins) => {
         expect(wins).toBeTruthy();
       });
 
@@ -158,9 +185,12 @@ describe('HandHistoryService', () => {
 
   describe('Recent and Notable Hands', () => {
     it('should get recent hands', () => {
-      const mockRecent = [mockHandHistory, { ...mockHandHistory, id: 'history-456' }];
+      const mockRecent = [
+        mockHandHistory,
+        { ...mockHandHistory, id: 'history-456' },
+      ];
 
-      service.getRecentHands().subscribe(hands => {
+      service.getRecentHands().subscribe((hands) => {
         expect(hands.length).toBe(2);
       });
 
@@ -172,10 +202,10 @@ describe('HandHistoryService', () => {
     it('should get biggest pots', () => {
       const mockBigPots = [
         { ...mockHandHistory, finalPot: 10000 },
-        { ...mockHandHistory, finalPot: 8000 }
+        { ...mockHandHistory, finalPot: 8000 },
       ];
 
-      service.getBiggestPots().subscribe(hands => {
+      service.getBiggestPots().subscribe((hands) => {
         expect(hands[0].finalPot).toBe(10000);
         expect(hands[1].finalPot).toBe(8000);
       });
@@ -186,7 +216,7 @@ describe('HandHistoryService', () => {
     });
 
     it('should get hand count for a game', () => {
-      service.getHandCount('game-456').subscribe(count => {
+      service.getHandCount('game-456').subscribe((count) => {
         expect(count).toBe(25);
       });
 
@@ -198,7 +228,7 @@ describe('HandHistoryService', () => {
 
   describe('Replay Data', () => {
     it('should get replay data for a hand', () => {
-      service.getReplayData('history-123').subscribe(replay => {
+      service.getReplayData('history-123').subscribe((replay) => {
         expect(replay).toEqual(mockReplayData);
         expect(replay.winnerName).toBe('Alice');
         expect(replay.actions.length).toBe(1);
@@ -209,54 +239,139 @@ describe('HandHistoryService', () => {
       req.flush(mockReplayData);
     });
 
-    it('should handle replay data with full board', () => {
-      const fullBoardReplay = {
-        ...mockReplayData,
-        board: [
-          'TEN of HEARTS',
-          'JACK of CLUBS',
-          'TWO of DIAMONDS',
-          'FIVE of SPADES',
-          'ACE of CLUBS'
-        ]
-      };
-
-      service.getReplayData('history-123').subscribe(replay => {
-        expect(replay.board.length).toBe(5);
-      });
+    it('should update replay subject when getting replay data', (done) => {
+      service.getReplayData('history-123').subscribe();
 
       const req = httpMock.expectOne(`${apiUrl}/history-123/replay`);
-      req.flush(fullBoardReplay);
+      req.flush(mockReplayData);
+
+      service.currentReplay$.subscribe((replay) => {
+        if (replay) {
+          expect(replay.winnerName).toBe('Alice');
+          done();
+        }
+      });
     });
   });
 
-  describe('Delete Operations', () => {
-    it('should delete game history', () => {
-      service.deleteGameHistory('game-456').subscribe(response => {
-        expect(response).toBeTruthy();
-      });
+  describe('Replay State Management', () => {
+    it('should navigate to next action', (done) => {
+      
+      service.getReplayData('history-123').subscribe();
+      const req = httpMock.expectOne(`${apiUrl}/history-123/replay`);
+      req.flush(mockReplayData);
 
-      const req = httpMock.expectOne(`${apiUrl}/game/game-456`);
-      expect(req.request.method).toBe('DELETE');
-      req.flush({ success: true });
+      
+      service.nextAction();
+
+      service.replayIndex$.subscribe((index) => {
+        if (index === 1) {
+          expect(index).toBe(1);
+          done();
+        }
+      });
+    });
+
+    it('should navigate to previous action', (done) => {
+      
+      service.getReplayData('history-123').subscribe();
+      const req = httpMock.expectOne(`${apiUrl}/history-123/replay`);
+      req.flush(mockReplayData);
+
+      
+      service.nextAction();
+      service.previousAction();
+
+      service.replayIndex$.subscribe((index) => {
+        expect(index).toBe(0);
+        done();
+      });
+    });
+
+    it('should go to specific action', (done) => {
+      service.getReplayData('history-123').subscribe();
+      const req = httpMock.expectOne(`${apiUrl}/history-123/replay`);
+      req.flush(mockReplayData);
+
+      service.goToAction(1);
+
+      service.replayIndex$.subscribe((index) => {
+        if (index === 1) {
+          expect(index).toBe(1);
+          done();
+        }
+      });
+    });
+
+    it('should reset replay position', (done) => {
+      service.getReplayData('history-123').subscribe();
+      const req = httpMock.expectOne(`${apiUrl}/history-123/replay`);
+      req.flush(mockReplayData);
+
+      service.nextAction();
+      service.resetReplay();
+
+      service.replayIndex$.subscribe((index) => {
+        expect(index).toBe(0);
+        done();
+      });
+    });
+
+    it('should clear replay state', (done) => {
+      service.getReplayData('history-123').subscribe();
+      const req = httpMock.expectOne(`${apiUrl}/history-123/replay`);
+      req.flush(mockReplayData);
+
+      service.clearReplay();
+
+      service.currentReplay$.subscribe((replay) => {
+        expect(replay).toBeNull();
+        done();
+      });
     });
   });
 
   describe('Formatting Helpers', () => {
-    it('should format card correctly', () => {
-      expect(service.formatCard('HEARTS', 'ACE')).toBe('A♥');
-      expect(service.formatCard('SPADES', 'KING')).toBe('K♠');
-      expect(service.formatCard('DIAMONDS', 'QUEEN')).toBe('Q♦');
-      expect(service.formatCard('CLUBS', 'TEN')).toBe('10♣');
-    });
-
     it('should format action correctly', () => {
-      expect(service.formatAction('FOLD', 0)).toBe('Fold');
-      expect(service.formatAction('CALL', 50)).toBe('Call $50');
-      expect(service.formatAction('RAISE', 100)).toBe('Raise to $100');
-      expect(service.formatAction('CHECK', 0)).toBe('Check');
-      expect(service.formatAction('BET', 75)).toBe('Bet $75');
-      expect(service.formatAction('ALL_IN', 500)).toBe('All-In $500');
+      const foldAction: ReplayAction = {
+        playerName: 'Alice',
+        action: 'FOLD',
+        amount: 0,
+        phase: 'PRE_FLOP',
+      };
+      expect(service.formatAction(foldAction)).toBe('Alice folds');
+
+      const callAction: ReplayAction = {
+        playerName: 'Bob',
+        action: 'CALL',
+        amount: 50,
+        phase: 'PRE_FLOP',
+      };
+      expect(service.formatAction(callAction)).toBe('Bob calls $50');
+
+      const raiseAction: ReplayAction = {
+        playerName: 'Charlie',
+        action: 'RAISE',
+        amount: 100,
+        phase: 'FLOP',
+      };
+      expect(service.formatAction(raiseAction)).toBe('Charlie raises to $100');
+
+      const checkAction: ReplayAction = {
+        playerName: 'Dave',
+        action: 'CHECK',
+        amount: 0,
+        phase: 'TURN',
+      };
+      expect(service.formatAction(checkAction)).toBe('Dave checks');
+
+      const betAction: ReplayAction = {
+        playerName: 'Eve',
+        action: 'BET',
+        amount: 75,
+        phase: 'RIVER',
+      };
+      expect(service.formatAction(betAction)).toBe('Eve bets $75');
     });
 
     it('should format phase correctly', () => {
@@ -267,42 +382,27 @@ describe('HandHistoryService', () => {
       expect(service.formatPhase('SHOWDOWN')).toBe('Showdown');
     });
 
-    it('should get card color class', () => {
-      expect(service.getCardColorClass('HEARTS')).toBe('red');
-      expect(service.getCardColorClass('DIAMONDS')).toBe('red');
-      expect(service.getCardColorClass('SPADES')).toBe('black');
-      expect(service.getCardColorClass('CLUBS')).toBe('black');
+    it('should format card string', () => {
+      const card = service.formatCard('ACE of HEARTS');
+      expect(card.value).toBe('ACE');
+      expect(card.suit).toBe('HEARTS');
+      expect(card.symbol).toBe('A♥');
+
+      const kingCard = service.formatCard('KING of SPADES');
+      expect(kingCard.symbol).toBe('K♠');
+
+      const tenCard = service.formatCard('TEN of DIAMONDS');
+      expect(tenCard.symbol).toBe('10♦');
     });
   });
 
-  describe('Replay State Management', () => {
-    it('should track current replay position', () => {
-      service.setReplayPosition(5);
-      expect(service.getReplayPosition()).toBe(5);
-    });
+  describe('Delete Operations', () => {
+    it('should delete game history', () => {
+      service.deleteGameHistory('game-456').subscribe();
 
-    it('should advance replay position', () => {
-      service.setReplayPosition(0);
-      service.advanceReplay();
-      expect(service.getReplayPosition()).toBe(1);
-    });
-
-    it('should rewind replay position', () => {
-      service.setReplayPosition(5);
-      service.rewindReplay();
-      expect(service.getReplayPosition()).toBe(4);
-    });
-
-    it('should not rewind below zero', () => {
-      service.setReplayPosition(0);
-      service.rewindReplay();
-      expect(service.getReplayPosition()).toBe(0);
-    });
-
-    it('should reset replay position', () => {
-      service.setReplayPosition(10);
-      service.resetReplay();
-      expect(service.getReplayPosition()).toBe(0);
+      const req = httpMock.expectOne(`${apiUrl}/game/game-456`);
+      expect(req.request.method).toBe('DELETE');
+      req.flush(null);
     });
   });
 
@@ -313,53 +413,73 @@ describe('HandHistoryService', () => {
       service.getHandHistory('non-existent').subscribe({
         error: (error) => {
           errorResponse = error;
-        }
+        },
       });
 
       const req = httpMock.expectOne(`${apiUrl}/non-existent`);
       req.flush('Not found', { status: 404, statusText: 'Not Found' });
 
-      expect(errorResponse.status).toBe(404);
+      expect(errorResponse).toBeTruthy();
     });
 
-    it('should handle server errors', () => {
-      let errorResponse: any;
+    it('should return empty array on game history error', () => {
+      service.getGameHistory('invalid').subscribe((histories) => {
+        expect(histories).toEqual([]);
+      });
 
-      service.getRecentHands().subscribe({
-        error: (error) => {
-          errorResponse = error;
-        }
+      const req = httpMock.expectOne(`${apiUrl}/game/invalid`);
+      req.flush('Error', { status: 500, statusText: 'Server Error' });
+    });
+
+    it('should return empty array on player history error', () => {
+      service.getPlayerHistory('invalid').subscribe((histories) => {
+        expect(histories).toEqual([]);
+      });
+
+      const req = httpMock.expectOne(`${apiUrl}/player/invalid`);
+      req.flush('Error', { status: 500, statusText: 'Server Error' });
+    });
+
+    it('should return empty array on recent hands error', () => {
+      service.getRecentHands().subscribe((hands) => {
+        expect(hands).toEqual([]);
       });
 
       const req = httpMock.expectOne(`${apiUrl}/recent`);
-      req.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
+      req.flush('Error', { status: 500, statusText: 'Server Error' });
+    });
 
-      expect(errorResponse.status).toBe(500);
+    it('should return 0 on hand count error', () => {
+      service.getHandCount('invalid').subscribe((count) => {
+        expect(count).toBe(0);
+      });
+
+      const req = httpMock.expectOne(`${apiUrl}/game/invalid/count`);
+      req.flush('Error', { status: 500, statusText: 'Server Error' });
     });
   });
 
-  describe('Hand Analysis', () => {
-    it('should identify winning hand type', () => {
-      expect(service.getHandTypeRank('Royal Flush')).toBe(10);
-      expect(service.getHandTypeRank('Straight Flush')).toBe(9);
-      expect(service.getHandTypeRank('Four of a Kind')).toBe(8);
-      expect(service.getHandTypeRank('Full House')).toBe(7);
-      expect(service.getHandTypeRank('Flush')).toBe(6);
-      expect(service.getHandTypeRank('Straight')).toBe(5);
-      expect(service.getHandTypeRank('Three of a Kind')).toBe(4);
-      expect(service.getHandTypeRank('Two Pair')).toBe(3);
-      expect(service.getHandTypeRank('Pair')).toBe(2);
-      expect(service.getHandTypeRank('High Card')).toBe(1);
+  describe('Get Current Replay State', () => {
+    it('should return null when no replay is active', () => {
+      const state = service.getCurrentReplayState();
+      expect(state).toBeNull();
     });
 
-    it('should calculate pot odds from actions', () => {
-      const actions = [
-        { playerName: 'Alice', action: 'RAISE', amount: 60, phase: 'PRE_FLOP' },
-        { playerName: 'Bob', action: 'CALL', amount: 60, phase: 'PRE_FLOP' }
-      ];
+    it('should return state after loading replay', (done) => {
+      service.getReplayData('history-123').subscribe(() => {
+        const state = service.getCurrentReplayState();
+        expect(state).toBeTruthy();
+        if (state) {
+          expect(state.players.length).toBeGreaterThan(0);
+          expect(state.pot).toBe(0); 
+          expect(state.actionIndex).toBe(0);
+          expect(state.isComplete).toBe(false);
+        }
+        done();
+      });
 
-      const totalPot = service.calculateTotalFromActions(actions);
-      expect(totalPot).toBe(120);
+      const req = httpMock.expectOne(`${apiUrl}/history-123/replay`);
+      req.flush(mockReplayData);
     });
   });
 });

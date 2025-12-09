@@ -1,20 +1,27 @@
-import { Component, ElementRef, OnInit, OnDestroy, ViewChild, inject } from '@angular/core';
+import { AsyncPipe, NgFor, NgIf } from '@angular/common';
+import {
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  inject,
+} from '@angular/core';
 import { Router } from '@angular/router';
-import { NgFor, NgIf, AsyncPipe } from '@angular/common';
-import { Subject, takeUntil, filter, delay } from 'rxjs';
+import { Subject, filter, takeUntil } from 'rxjs';
 
+import { Card } from '../model/card';
 import { Game } from '../model/game';
 import { Player } from '../model/player';
-import { Card } from '../model/card';
-import { PlayerService } from '../services/player.service';
-import { PokerService, PlayerInfo } from '../services/poker.service';
 import { RaiseInputComponent } from '../raise-input/raise-input.component';
+import { PlayerService } from '../services/player.service';
+import { PlayerInfo, PokerService } from '../services/poker.service';
 
 @Component({
-    selector: 'app-game-table',
-    templateUrl: './game-table.component.html',
-    styleUrls: ['./game-table.component.scss'],
-    imports: [NgFor, NgIf, AsyncPipe, RaiseInputComponent]
+  selector: 'app-game-table',
+  templateUrl: './game-table.component.html',
+  styleUrls: ['./game-table.component.scss'],
+  imports: [NgFor, NgIf, AsyncPipe, RaiseInputComponent],
 })
 export class GameTableComponent implements OnInit, OnDestroy {
   private pokerService = inject(PokerService);
@@ -25,17 +32,17 @@ export class GameTableComponent implements OnInit, OnDestroy {
   
   game: Game = new Game();
   currentPot = 0;
-  
+
   
   humanPlayer: Player | undefined;
-  
+
   
   showModal = false;
   gameResultMessage = '';
   winningHandDescription = '';
   isLoading = false;
   errorMessage = '';
-  
+
   
   private processingBots = false;
 
@@ -56,32 +63,36 @@ export class GameTableComponent implements OnInit, OnDestroy {
 
   private subscribeToGameState(): void {
     
-    this.pokerService.game$.pipe(
-      takeUntil(this.destroy$),
-      filter(game => game !== null)
-    ).subscribe(game => {
-      if (game) {
-        this.updateGameState(game);
-      }
-    });
+    this.pokerService.game$
+      .pipe(
+        takeUntil(this.destroy$),
+        filter((game) => game !== null)
+      )
+      .subscribe((game) => {
+        if (game) {
+          this.updateGameState(game);
+        }
+      });
 
     
-    this.pokerService.loading$.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(loading => {
-      this.isLoading = loading;
-    });
+    this.pokerService.loading$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((loading) => {
+        this.isLoading = loading;
+      });
 
     
-    this.pokerService.error$.pipe(
-      takeUntil(this.destroy$),
-      filter(error => error !== null)
-    ).subscribe(error => {
-      if (error) {
-        this.errorMessage = error;
-        console.error('Game error:', error);
-      }
-    });
+    this.pokerService.error$
+      .pipe(
+        takeUntil(this.destroy$),
+        filter((error) => error !== null)
+      )
+      .subscribe((error) => {
+        if (error) {
+          this.errorMessage = error;
+          console.error('Game error:', error);
+        }
+      });
   }
 
   private initializeGame(): void {
@@ -93,7 +104,7 @@ export class GameTableComponent implements OnInit, OnDestroy {
       error: () => {
         
         this.startNewGame();
-      }
+      },
     });
   }
 
@@ -102,13 +113,15 @@ export class GameTableComponent implements OnInit, OnDestroy {
   private updateGameState(game: Game): void {
     this.game = game;
     this.currentPot = game.currentPot || this.calculateCurrentPot();
+
     
-    
-    this.humanPlayer = this.game.players.find(p => !p.name?.startsWith('Bot'));
-    
+    this.humanPlayer = this.game.players.find(
+      (p) => !p.name?.startsWith('Bot')
+    );
+
     
     this.sortPlayersForDisplay();
-    
+
     
     if (game.isFinished || game.phase === 'SHOWDOWN') {
       this.handleGameEnd();
@@ -119,15 +132,20 @@ export class GameTableComponent implements OnInit, OnDestroy {
 
   private sortPlayersForDisplay(): void {
     if (this.game?.players) {
-      const bots = this.game.players.filter(p => p.name?.startsWith('Bot'));
-      const humans = this.game.players.filter(p => !p.name?.startsWith('Bot'));
+      const bots = this.game.players.filter((p) => p.name?.startsWith('Bot'));
+      const humans = this.game.players.filter(
+        (p) => !p.name?.startsWith('Bot')
+      );
       this.game.players = [...bots, ...humans];
     }
   }
 
   private calculateCurrentPot(): number {
     if (!this.game?.players) return 0;
-    return this.game.players.reduce((total, player) => total + (player.betAmount || 0), 0);
+    return this.game.players.reduce(
+      (total, player) => total + (player.betAmount || 0),
+      0
+    );
   }
 
   
@@ -136,7 +154,7 @@ export class GameTableComponent implements OnInit, OnDestroy {
     if (!this.humanPlayer || !this.canPlayerAct()) return;
 
     this.pokerService.fold(this.humanPlayer.id).subscribe({
-      error: (error) => console.error('Error during fold:', error)
+      error: (error) => console.error('Error during fold:', error),
     });
   }
 
@@ -144,12 +162,13 @@ export class GameTableComponent implements OnInit, OnDestroy {
     if (!this.humanPlayer || !this.canPlayerAct()) return;
 
     if (!this.canCheck()) {
-      this.errorMessage = 'Cannot check when facing a bet. Call, raise, or fold.';
+      this.errorMessage =
+        'Cannot check when facing a bet. Call, raise, or fold.';
       return;
     }
 
     this.pokerService.check(this.humanPlayer.id).subscribe({
-      error: (error) => console.error('Error during check:', error)
+      error: (error) => console.error('Error during check:', error),
     });
   }
 
@@ -157,7 +176,7 @@ export class GameTableComponent implements OnInit, OnDestroy {
     if (!this.humanPlayer || !this.canPlayerAct()) return;
 
     this.pokerService.call(this.humanPlayer.id).subscribe({
-      error: (error) => console.error('Error during call:', error)
+      error: (error) => console.error('Error during call:', error),
     });
   }
 
@@ -165,7 +184,7 @@ export class GameTableComponent implements OnInit, OnDestroy {
     if (!this.humanPlayer || !this.canPlayerAct()) return;
 
     this.pokerService.bet(this.humanPlayer.id, amount).subscribe({
-      error: (error) => console.error('Error during bet:', error)
+      error: (error) => console.error('Error during bet:', error),
     });
   }
 
@@ -173,22 +192,23 @@ export class GameTableComponent implements OnInit, OnDestroy {
     if (!this.humanPlayer || !this.canPlayerAct()) return;
 
     this.pokerService.raise(this.humanPlayer.id, amount).subscribe({
-      error: (error) => console.error('Error during raise:', error)
+      error: (error) => console.error('Error during raise:', error),
     });
   }
 
   allIn(): void {
     if (!this.humanPlayer || !this.canPlayerAct()) return;
 
-    const allInAmount = this.humanPlayer.chips + (this.humanPlayer.betAmount || 0);
-    
+    const allInAmount =
+      this.humanPlayer.chips + (this.humanPlayer.betAmount || 0);
+
     if (this.game.currentBet > 0) {
       this.pokerService.raise(this.humanPlayer.id, allInAmount).subscribe({
-        error: (error) => console.error('Error during all-in:', error)
+        error: (error) => console.error('Error during all-in:', error),
       });
     } else {
       this.pokerService.bet(this.humanPlayer.id, allInAmount).subscribe({
-        error: (error) => console.error('Error during all-in:', error)
+        error: (error) => console.error('Error during all-in:', error),
       });
     }
   }
@@ -208,20 +228,20 @@ export class GameTableComponent implements OnInit, OnDestroy {
 
   startNewGame(): void {
     const registeredPlayers = this.playerService.getPlayers();
-    
+
     let playersToStart: PlayerInfo[];
     if (registeredPlayers && registeredPlayers.length >= 2) {
-      playersToStart = registeredPlayers.map(p => ({
+      playersToStart = registeredPlayers.map((p) => ({
         name: p.name,
-        startingChips: p.chips || 1000,
-        isBot: p.isBot
+        startingChips: p.startingChips || 1000,
+        isBot: p.isBot,
       }));
     } else {
       
       playersToStart = [
         { name: 'Player', startingChips: 1000, isBot: false },
         { name: 'Bot1', startingChips: 1000, isBot: true },
-        { name: 'Bot2', startingChips: 1000, isBot: true }
+        { name: 'Bot2', startingChips: 1000, isBot: true },
       ];
     }
 
@@ -230,7 +250,7 @@ export class GameTableComponent implements OnInit, OnDestroy {
         this.closeModal();
         this.errorMessage = '';
       },
-      error: (error) => console.error('Error starting game:', error)
+      error: (error) => console.error('Error starting game:', error),
     });
   }
 
@@ -244,7 +264,7 @@ export class GameTableComponent implements OnInit, OnDestroy {
         console.error('Error starting new hand:', error);
         
         this.startNewGame();
-      }
+      },
     });
   }
 
@@ -254,20 +274,29 @@ export class GameTableComponent implements OnInit, OnDestroy {
         this.closeModal();
         this.startNewGame();
       },
-      error: (error) => console.error('Error resetting game:', error)
+      error: (error) => console.error('Error resetting game:', error),
     });
   }
 
   
 
   private processBotsIfNeeded(): void {
-    if (this.processingBots || this.game.isFinished || this.game.phase === 'SHOWDOWN') {
+    if (
+      this.processingBots ||
+      this.game.isFinished ||
+      this.game.phase === 'SHOWDOWN'
+    ) {
       return;
     }
 
     
     const currentPlayer = this.game.players[this.game.currentPlayerIndex || 0];
-    if (currentPlayer && currentPlayer.name?.startsWith('Bot') && !currentPlayer.folded && !currentPlayer.isAllIn) {
+    if (
+      currentPlayer &&
+      currentPlayer.name?.startsWith('Bot') &&
+      !currentPlayer.folded &&
+      !currentPlayer.isAllIn
+    ) {
       this.processingBots = true;
       this.executeBotAction(currentPlayer.id);
     }
@@ -284,7 +313,7 @@ export class GameTableComponent implements OnInit, OnDestroy {
         error: (error) => {
           console.error('Error during bot action:', error);
           this.processingBots = false;
-        }
+        },
       });
     }, 800);
   }
@@ -303,7 +332,7 @@ export class GameTableComponent implements OnInit, OnDestroy {
         },
         error: () => {
           this.gameResultMessage = 'Game Over';
-        }
+        },
       });
     }
     this.showModal = true;
@@ -314,7 +343,7 @@ export class GameTableComponent implements OnInit, OnDestroy {
   canPlayerAct(): boolean {
     if (!this.humanPlayer || this.game.isFinished) return false;
     if (this.humanPlayer.folded || this.humanPlayer.isAllIn) return false;
-    
+
     
     const currentPlayer = this.game.players[this.game.currentPlayerIndex || 0];
     return currentPlayer?.id === this.humanPlayer.id;
@@ -333,11 +362,17 @@ export class GameTableComponent implements OnInit, OnDestroy {
 
   getCallAmount(): number {
     if (!this.humanPlayer) return 0;
-    return Math.max(0, this.game.currentBet - (this.humanPlayer.betAmount || 0));
+    return Math.max(
+      0,
+      this.game.currentBet - (this.humanPlayer.betAmount || 0)
+    );
   }
 
   getMinRaiseAmount(): number {
-    return this.game.currentBet + (this.game.minRaiseAmount || this.game.bigBlind || 20);
+    return (
+      this.game.currentBet +
+      (this.game.minRaiseAmount || this.game.bigBlind || 20)
+    );
   }
 
   isPlayerTurn(player: Player): boolean {
@@ -362,11 +397,11 @@ export class GameTableComponent implements OnInit, OnDestroy {
 
   getPhaseDisplayName(): string {
     const phases: Record<string, string> = {
-      'PRE_FLOP': 'Pre-Flop',
-      'FLOP': 'Flop',
-      'TURN': 'Turn',
-      'RIVER': 'River',
-      'SHOWDOWN': 'Showdown'
+      PRE_FLOP: 'Pre-Flop',
+      FLOP: 'Flop',
+      TURN: 'Turn',
+      RIVER: 'River',
+      SHOWDOWN: 'Showdown',
     };
     return phases[this.game.phase] || this.game.phase;
   }
@@ -378,8 +413,15 @@ export class GameTableComponent implements OnInit, OnDestroy {
 
     let rank = card.value?.toLowerCase() || '';
     const rankMap: Record<string, string> = {
-      'two': '2', 'three': '3', 'four': '4', 'five': '5',
-      'six': '6', 'seven': '7', 'eight': '8', 'nine': '9', 'ten': '10'
+      two: '2',
+      three: '3',
+      four: '4',
+      five: '5',
+      six: '6',
+      seven: '7',
+      eight: '8',
+      nine: '9',
+      ten: '10',
     };
     rank = rankMap[rank] || rank;
 
@@ -409,4 +451,3 @@ export class GameTableComponent implements OnInit, OnDestroy {
     this.router.navigate(['/']);
   }
 }
-

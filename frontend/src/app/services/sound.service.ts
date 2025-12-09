@@ -1,17 +1,17 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
-export type SoundEffect = 
-  | 'cardDeal' 
-  | 'cardFlip' 
-  | 'chips' 
-  | 'check' 
-  | 'fold' 
-  | 'allIn' 
-  | 'win' 
-  | 'lose' 
-  | 'turn' 
-  | 'timer' 
+export type SoundEffect =
+  | 'cardDeal'
+  | 'cardFlip'
+  | 'chips'
+  | 'check'
+  | 'fold'
+  | 'allIn'
+  | 'win'
+  | 'lose'
+  | 'turn'
+  | 'timer'
   | 'click';
 
 interface SoundSettings {
@@ -21,15 +21,17 @@ interface SoundSettings {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class SoundService {
   private audioContext: AudioContext | null = null;
-  private sounds: Map<SoundEffect, AudioBuffer> = new Map();
+  private sounds = new Map<SoundEffect, AudioBuffer>();
   private isInitialized = false;
 
   
-  private settingsSubject = new BehaviorSubject<SoundSettings>(this.loadSettings());
+  private settingsSubject = new BehaviorSubject<SoundSettings>(
+    this.loadSettings()
+  );
   public settings$ = this.settingsSubject.asObservable();
 
   
@@ -44,7 +46,7 @@ export class SoundService {
     lose: '/assets/sounds/lose.mp3',
     turn: '/assets/sounds/turn.mp3',
     timer: '/assets/sounds/timer.mp3',
-    click: '/assets/sounds/click.mp3'
+    click: '/assets/sounds/click.mp3',
   };
 
   constructor() {
@@ -66,7 +68,8 @@ export class SoundService {
     if (this.isInitialized) return;
 
     try {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      this.audioContext = new (window.AudioContext ||
+        (window as any).webkitAudioContext)();
       await this.preloadSounds();
       this.isInitialized = true;
       console.log('Sound system initialized');
@@ -78,19 +81,26 @@ export class SoundService {
   private async preloadSounds(): Promise<void> {
     if (!this.audioContext) return;
 
-    const loadPromises = Object.entries(this.soundUrls).map(async ([key, url]) => {
-      try {
-        const response = await fetch(url);
-        if (response.ok) {
-          const arrayBuffer = await response.arrayBuffer();
-          const audioBuffer = await this.audioContext!.decodeAudioData(arrayBuffer);
-          this.sounds.set(key as SoundEffect, audioBuffer);
+    const loadPromises = Object.entries(this.soundUrls).map(
+      async ([key, url]) => {
+        try {
+          const response = await fetch(url);
+          if (response.ok) {
+            const arrayBuffer = await response.arrayBuffer();
+            const audioBuffer = await this.audioContext!.decodeAudioData(
+              arrayBuffer
+            );
+            this.sounds.set(key as SoundEffect, audioBuffer);
+          }
+        } catch (error) {
+          
+          this.sounds.set(
+            key as SoundEffect,
+            this.generateSyntheticSound(key as SoundEffect)
+          );
         }
-      } catch (error) {
-        
-        this.sounds.set(key as SoundEffect, this.generateSyntheticSound(key as SoundEffect));
       }
-    });
+    );
 
     await Promise.allSettled(loadPromises);
   }
@@ -152,7 +162,11 @@ export class SoundService {
         break;
     }
 
-    const buffer = this.audioContext.createBuffer(1, sampleRate * duration, sampleRate);
+    const buffer = this.audioContext.createBuffer(
+      1,
+      sampleRate * duration,
+      sampleRate
+    );
     const data = buffer.getChannelData(0);
 
     for (let i = 0; i < data.length; i++) {
@@ -169,7 +183,7 @@ export class SoundService {
 
   play(effect: SoundEffect): void {
     const settings = this.settingsSubject.value;
-    
+
     if (!settings.enabled || !settings.effects[effect]) {
       return;
     }
@@ -206,27 +220,61 @@ export class SoundService {
   }
 
   
-  playCardDeal(): void { this.play('cardDeal'); }
-  playCardFlip(): void { this.play('cardFlip'); }
-  playChips(): void { this.play('chips'); }
-  playCheck(): void { this.play('check'); }
-  playFold(): void { this.play('fold'); }
-  playAllIn(): void { this.play('allIn'); }
-  playWin(): void { this.play('win'); }
-  playLose(): void { this.play('lose'); }
-  playTurn(): void { this.play('turn'); }
-  playTimer(): void { this.play('timer'); }
-  playClick(): void { this.play('click'); }
+  playCardDeal(): void {
+    this.play('cardDeal');
+  }
+  playCardFlip(): void {
+    this.play('cardFlip');
+  }
+  playChips(): void {
+    this.play('chips');
+  }
+  playCheck(): void {
+    this.play('check');
+  }
+  playFold(): void {
+    this.play('fold');
+  }
+  playAllIn(): void {
+    this.play('allIn');
+  }
+  playWin(): void {
+    this.play('win');
+  }
+  playLose(): void {
+    this.play('lose');
+  }
+  playTurn(): void {
+    this.play('turn');
+  }
+  playTimer(): void {
+    this.play('timer');
+  }
+  playClick(): void {
+    this.play('click');
+  }
 
   
   playForAction(action: string): void {
     switch (action.toUpperCase()) {
-      case 'FOLD': this.playFold(); break;
-      case 'CHECK': this.playCheck(); break;
-      case 'CALL': this.playChips(); break;
-      case 'BET': this.playChips(); break;
-      case 'RAISE': this.playChips(); break;
-      case 'ALL_IN': this.playAllIn(); break;
+      case 'FOLD':
+        this.playFold();
+        break;
+      case 'CHECK':
+        this.playCheck();
+        break;
+      case 'CALL':
+        this.playChips();
+        break;
+      case 'BET':
+        this.playChips();
+        break;
+      case 'RAISE':
+        this.playChips();
+        break;
+      case 'ALL_IN':
+        this.playAllIn();
+        break;
     }
   }
 
@@ -254,8 +302,8 @@ export class SoundService {
       ...this.settingsSubject.value,
       effects: {
         ...this.settingsSubject.value.effects,
-        [effect]: enabled
-      }
+        [effect]: enabled,
+      },
     };
     this.settingsSubject.next(settings);
     this.saveSettings(settings);
@@ -263,6 +311,10 @@ export class SoundService {
 
   toggleSound(): void {
     this.setEnabled(!this.settingsSubject.value.enabled);
+  }
+
+  isEnabled(): boolean {
+    return this.settingsSubject.value.enabled;
   }
 
   private loadSettings(): SoundSettings {
@@ -280,8 +332,8 @@ export class SoundService {
         lose: true,
         turn: true,
         timer: true,
-        click: true
-      }
+        click: true,
+      },
     };
 
     if (typeof localStorage === 'undefined') {
@@ -302,9 +354,12 @@ export class SoundService {
 
   private saveSettings(settings: SoundSettings): void {
     if (typeof localStorage === 'undefined') return;
-    
+
     try {
-      localStorage.setItem('truholdem_sound_settings', JSON.stringify(settings));
+      localStorage.setItem(
+        'truholdem_sound_settings',
+        JSON.stringify(settings)
+      );
     } catch (e) {
       console.warn('Failed to save sound settings');
     }

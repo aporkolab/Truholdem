@@ -47,7 +47,7 @@ export class PokerService {
 
   isPlayerTurn$: Observable<boolean> = this.game$.pipe(
     map(game => {
-      if (!game) return false;
+      if (!game || game.currentPlayerIndex === undefined) return false;
       const currentPlayer = game.players[game.currentPlayerIndex];
       return currentPlayer && !currentPlayer.name?.startsWith('Bot');
     })

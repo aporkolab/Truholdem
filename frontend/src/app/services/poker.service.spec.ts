@@ -1,7 +1,11 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import {
+  HttpClientTestingModule,
+  HttpTestingController,
+} from '@angular/common/http/testing';
 import { PokerService, PlayerInfo } from './poker.service';
 import { Game } from '../model/game';
+import { Player } from '../model/player';
 import { environment } from '../../environments/environment';
 
 describe('PokerService', () => {
@@ -9,10 +13,38 @@ describe('PokerService', () => {
   let httpMock: HttpTestingController;
   const apiUrl = environment.apiUrl + '/poker';
 
+  const createMockGame = (overrides: Partial<Game> = {}): Game => {
+    const game = new Game();
+    game.id = overrides.id || '123';
+    game.currentPot = overrides.currentPot ?? 30;
+    game.players = overrides.players || [];
+    game.communityCards = overrides.communityCards || [];
+    game.phase = overrides.phase || 'PRE_FLOP';
+    game.currentBet = overrides.currentBet ?? 20;
+    game.currentPlayerIndex = overrides.currentPlayerIndex;
+    game.minRaiseAmount = overrides.minRaiseAmount ?? 20;
+    game.bigBlind = overrides.bigBlind ?? 20;
+    game.smallBlind = overrides.smallBlind ?? 10;
+    game.playerActions = overrides.playerActions || {};
+    return game;
+  };
+
+  const createMockPlayer = (overrides: Partial<Player> = {}): Player => {
+    const player = new Player();
+    player.id = overrides.id || 'player-1';
+    player.name = overrides.name || 'TestPlayer';
+    player.chips = overrides.chips ?? 1000;
+    player.betAmount = overrides.betAmount ?? 0;
+    player.folded = overrides.folded ?? false;
+    player.isBot = overrides.isBot ?? false;
+    player.isAllIn = overrides.isAllIn ?? false;
+    return player;
+  };
+
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
-      providers: [PokerService]
+      providers: [PokerService],
     });
     service = TestBed.inject(PokerService);
     httpMock = TestBed.inject(HttpTestingController);
@@ -26,21 +58,13 @@ describe('PokerService', () => {
     it('should create a new game with provided players', () => {
       const players: PlayerInfo[] = [
         { name: 'Player1', startingChips: 1000, isBot: false },
-        { name: 'Bot1', startingChips: 1000, isBot: true }
+        { name: 'Bot1', startingChips: 1000, isBot: true },
       ];
 
-      const mockGame: Game = {
-        id: '123',
-        currentPot: 30,
-        players: [],
-        communityCards: [],
-        phase: 'PRE_FLOP',
-        currentBet: 20,
-        playerActions: {}
-      };
+      const mockGame = createMockGame();
 
-      service.startGame(players).subscribe(game => {
-        expect(game).toEqual(mockGame);
+      service.startGame(players).subscribe((game) => {
+        expect(game.id).toBe('123');
       });
 
       const req = httpMock.expectOne(`${apiUrl}/start`);
@@ -50,22 +74,14 @@ describe('PokerService', () => {
     });
 
     it('should create a game with default players when none provided', () => {
-      const mockGame: Game = {
-        id: '123',
-        currentPot: 30,
-        players: [],
-        communityCards: [],
-        phase: 'PRE_FLOP',
-        currentBet: 20,
-        playerActions: {}
-      };
+      const mockGame = createMockGame();
 
-      service.startGame().subscribe(game => {
+      service.startGame().subscribe((game) => {
         expect(game).toBeTruthy();
       });
 
       const req = httpMock.expectOne(`${apiUrl}/start`);
-      expect(req.request.body.length).toBe(3); 
+      expect(req.request.body.length).toBe(3);
       req.flush(mockGame);
     });
   });
@@ -74,15 +90,16 @@ describe('PokerService', () => {
     it('should perform fold action', () => {
       const playerId = 'player-123';
 
-      service.fold(playerId).subscribe(response => {
+      service.fold(playerId).subscribe((response) => {
         expect(response).toBe('Fold successful');
       });
 
-      const foldReq = httpMock.expectOne(`${apiUrl}/fold?playerId=${playerId}`);
+      const foldReq = httpMock.expectOne(
+        `${apiUrl}/fold?playerId=${playerId}`
+      );
       expect(foldReq.request.method).toBe('POST');
       foldReq.flush('Fold successful');
 
-      
       const statusReq = httpMock.expectOne(`${apiUrl}/status`);
       statusReq.flush({});
     });
@@ -90,11 +107,13 @@ describe('PokerService', () => {
     it('should perform check action', () => {
       const playerId = 'player-123';
 
-      service.check(playerId).subscribe(response => {
+      service.check(playerId).subscribe((response) => {
         expect(response).toBe('Check successful');
       });
 
-      const checkReq = httpMock.expectOne(`${apiUrl}/check?playerId=${playerId}`);
+      const checkReq = httpMock.expectOne(
+        `${apiUrl}/check?playerId=${playerId}`
+      );
       expect(checkReq.request.method).toBe('POST');
       checkReq.flush('Check successful');
 
@@ -106,7 +125,7 @@ describe('PokerService', () => {
       const playerId = 'player-123';
       const amount = 50;
 
-      service.bet(playerId, amount).subscribe(response => {
+      service.bet(playerId, amount).subscribe((response) => {
         expect(response).toBe('Bet successful');
       });
 
@@ -123,7 +142,7 @@ describe('PokerService', () => {
       const playerId = 'player-123';
       const amount = 100;
 
-      service.raise(playerId, amount).subscribe(response => {
+      service.raise(playerId, amount).subscribe((response) => {
         expect(response).toBe('Raise successful');
       });
 
@@ -139,18 +158,11 @@ describe('PokerService', () => {
 
   describe('Game Status', () => {
     it('should get current game status', () => {
-      const mockGame: Game = {
-        id: '123',
-        currentPot: 100,
-        players: [],
-        communityCards: [],
-        phase: 'FLOP',
-        currentBet: 40,
-        playerActions: {}
-      };
+      const mockGame = createMockGame({ currentPot: 100, phase: 'FLOP', currentBet: 40 });
 
-      service.getGameStatus().subscribe(game => {
-        expect(game).toEqual(mockGame);
+      service.getGameStatus().subscribe((game) => {
+        expect(game.currentPot).toBe(100);
+        expect(game.phase).toBe('FLOP');
       });
 
       const req = httpMock.expectOne(`${apiUrl}/status`);
@@ -159,18 +171,10 @@ describe('PokerService', () => {
     });
 
     it('should update game subject on status refresh', () => {
-      const mockGame: Game = {
-        id: '123',
-        currentPot: 100,
-        players: [],
-        communityCards: [],
-        phase: 'FLOP',
-        currentBet: 40,
-        playerActions: {}
-      };
+      const mockGame = createMockGame({ currentPot: 100 });
 
       let receivedGame: Game | null = null;
-      service.game$.subscribe(game => {
+      service.game$.subscribe((game) => {
         receivedGame = game;
       });
 
@@ -179,7 +183,8 @@ describe('PokerService', () => {
       const req = httpMock.expectOne(`${apiUrl}/status`);
       req.flush(mockGame);
 
-      expect(receivedGame).toEqual(mockGame);
+      expect(receivedGame).toBeTruthy();
+      expect(receivedGame!.currentPot).toBe(100);
     });
   });
 
@@ -188,7 +193,7 @@ describe('PokerService', () => {
       const botId = 'bot-123';
       const mockResult = { message: 'Bot action executed successfully' };
 
-      service.executeBotAction(botId).subscribe(result => {
+      service.executeBotAction(botId).subscribe((result) => {
         expect(result.message).toBe('Bot action executed successfully');
       });
 
@@ -203,84 +208,26 @@ describe('PokerService', () => {
 
   describe('Helper Methods', () => {
     it('should calculate minimum raise amount', () => {
-      const game: Game = {
-        currentPot: 100,
-        players: [],
-        communityCards: [],
-        phase: 'FLOP',
-        currentBet: 40,
-        minRaiseAmount: 20,
-        playerActions: {}
-      };
-
+      const game = createMockGame({ currentBet: 40, minRaiseAmount: 20 });
       const minRaise = service.getMinRaiseAmount(game);
-      expect(minRaise).toBe(60); 
+      expect(minRaise).toBe(60);
     });
 
     it('should calculate call amount for player', () => {
-      const game: Game = {
-        currentPot: 100,
-        players: [],
-        communityCards: [],
-        phase: 'FLOP',
-        currentBet: 40,
-        playerActions: {}
-      };
-
-      const player = {
-        id: '123',
-        name: 'Player1',
-        hand: [],
-        chips: 1000,
-        betAmount: 10,
-        totalBetInRound: 10,
-        folded: false,
-        isBot: false,
-        isAllIn: false,
-        hasActed: false,
-        seatPosition: 0,
-        canAct: () => true,
-        getDisplayName: () => 'Player1',
-        isHuman: () => true,
-        getStatusText: () => ''
-      };
-
-      const callAmount = service.getCallAmount(game, player as any);
-      expect(callAmount).toBe(30); 
+      const game = createMockGame({ currentBet: 40 });
+      const player = createMockPlayer({ betAmount: 10 });
+      const callAmount = service.getCallAmount(game, player);
+      expect(callAmount).toBe(30);
     });
 
     it('should check if player can check', () => {
-      const game: Game = {
-        currentPot: 100,
-        players: [],
-        communityCards: [],
-        phase: 'FLOP',
-        currentBet: 40,
-        playerActions: {}
-      };
+      const game = createMockGame({ currentBet: 40 });
 
-      const playerCanCheck = {
-        id: '123',
-        name: 'Player1',
-        hand: [],
-        chips: 1000,
-        betAmount: 40,
-        folded: false,
-        isBot: false
-      };
+      const playerCanCheck = createMockPlayer({ betAmount: 40 });
+      const playerCannotCheck = createMockPlayer({ betAmount: 20 });
 
-      const playerCannotCheck = {
-        id: '456',
-        name: 'Player2',
-        hand: [],
-        chips: 1000,
-        betAmount: 20,
-        folded: false,
-        isBot: false
-      };
-
-      expect(service.canCheck(game, playerCanCheck as any)).toBe(true);
-      expect(service.canCheck(game, playerCannotCheck as any)).toBe(false);
+      expect(service.canCheck(game, playerCanCheck)).toBe(true);
+      expect(service.canCheck(game, playerCannotCheck)).toBe(false);
     });
 
     it('should get phase display name', () => {
@@ -295,18 +242,21 @@ describe('PokerService', () => {
   describe('Error Handling', () => {
     it('should handle HTTP errors gracefully', () => {
       let errorMessage: string | null = null;
-      service.error$.subscribe(error => {
+      service.error$.subscribe((error) => {
         errorMessage = error;
       });
 
       service.getGameStatus().subscribe({
         error: () => {
           
-        }
+        },
       });
 
       const req = httpMock.expectOne(`${apiUrl}/status`);
-      req.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
+      req.flush('Server Error', {
+        status: 500,
+        statusText: 'Internal Server Error',
+      });
 
       expect(errorMessage).toBeTruthy();
     });

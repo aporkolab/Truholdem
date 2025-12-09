@@ -3,8 +3,10 @@ import { BehaviorSubject, Subject } from 'rxjs';
 import { AuthService } from './auth.service';
 import { Game } from '../model/game';
 
-declare const SockJS: (url: string) => unknown;
-declare const Stomp: { over: (socket: unknown) => unknown };
+
+declare const SockJS: any;
+
+declare const Stomp: any;
 
 export interface GameUpdateMessage {
   type: string;
@@ -27,7 +29,8 @@ export class WebSocketService {
   
   private readonly WEBSOCKET_URL = 'http://localhost:8080/ws';
   
-  private stompClient: unknown;
+  
+  private stompClient: any = null;
   private connected = false;
   private gameId: string | null = null;
 
@@ -41,7 +44,7 @@ export class WebSocketService {
   public errors$ = this.errorSubject.asObservable();
 
   constructor() {
-    // Auto-connect when authenticated
+    
     this.authService.isAuthenticated$.subscribe(isAuth => {
       if (isAuth && !this.connected) {
         this.connect();
@@ -66,13 +69,13 @@ export class WebSocketService {
       const socket = new SockJS(this.WEBSOCKET_URL);
       this.stompClient = Stomp.over(socket);
 
-      // Configure headers with auth token
+      
       const headers = {
         'Authorization': `Bearer ${token}`
       };
 
       this.stompClient.connect(headers, 
-        () => {
+        (frame: unknown) => {
           console.log('WebSocket connected:', frame);
           this.connected = true;
           this.connectionStatusSubject.next(true);
@@ -83,21 +86,23 @@ export class WebSocketService {
         }
       );
 
-      // Handle disconnection
-      this.stompClient.ws.onclose = () => {
-        console.log('WebSocket disconnected');
-        this.connected = false;
-        this.connectionStatusSubject.next(false);
-        
-        // Auto-reconnect after 5 seconds if still authenticated
-        if (this.authService.isAuthenticated()) {
-          setTimeout(() => {
-            if (!this.connected) {
-              this.connect();
-            }
-          }, 5000);
-        }
-      };
+      
+      if (this.stompClient.ws) {
+        this.stompClient.ws.onclose = () => {
+          console.log('WebSocket disconnected');
+          this.connected = false;
+          this.connectionStatusSubject.next(false);
+          
+          
+          if (this.authService.isAuthenticated()) {
+            setTimeout(() => {
+              if (!this.connected) {
+                this.connect();
+              }
+            }, 5000);
+          }
+        };
+      }
 
     } catch (error: unknown) {
       console.error('Failed to create WebSocket connection:', error);
@@ -123,14 +128,14 @@ export class WebSocketService {
       return;
     }
 
-    // Unsubscribe from previous game if any
+    
     if (this.gameId && this.gameId !== gameId) {
       this.unsubscribeFromGame();
     }
 
     this.gameId = gameId;
 
-    // Subscribe to game updates
+    
     this.stompClient.subscribe(`/topic/game/${gameId}`, (message: { body: string }) => {
       try {
         const gameUpdate: GameUpdateMessage = JSON.parse(message.body);
@@ -141,12 +146,12 @@ export class WebSocketService {
       }
     });
 
-    // Subscribe to user-specific messages
+    
     this.stompClient.subscribe('/user/queue/messages', (message: { body: string }) => {
       try {
         const userMessage = JSON.parse(message.body);
         console.log('Received personal message:', userMessage);
-        // Handle personal messages (notifications, errors, etc.)
+        
       } catch (error: unknown) {
         console.error('Error parsing personal message:', error);
       }
@@ -157,7 +162,7 @@ export class WebSocketService {
 
   unsubscribeFromGame(): void {
     if (this.gameId && this.stompClient && this.connected) {
-      // Note: In a real implementation, you'd track subscriptions to properly unsubscribe
+      
       this.gameId = null;
       console.log('Unsubscribed from game');
     }
@@ -232,7 +237,7 @@ export class WebSocketService {
     this.errorSubject.next(errorMessage);
   }
 
-  // Getters
+  
   isConnected(): boolean {
     return this.connected;
   }

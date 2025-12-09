@@ -82,20 +82,20 @@ export class AuthService {
   }
 
   register(userData: RegisterRequest): Observable<{ message: string }> {
-    return this.http.post(`${this.API_URL}/register`, userData)
+    return this.http.post<{ message: string }>(`${this.API_URL}/register`, userData)
       .pipe(
         catchError(this.handleError)
       );
   }
 
   logout(): Observable<{ message: string }> {
-    return this.http.post(`${this.API_URL}/logout`, {})
+    return this.http.post<{ message: string }>(`${this.API_URL}/logout`, {})
       .pipe(
         tap(() => {
           this.handleLogout();
         }),
         catchError(error => {
-          // Even if the API call fails, clear local state
+          
           this.handleLogout();
           return throwError(() => error);
         })
@@ -123,7 +123,7 @@ export class AuthService {
 
   changePassword(currentPassword: string, newPassword: string): Observable<{ message: string }> {
     const body = { currentPassword, newPassword };
-    return this.http.post(`${this.API_URL}/change-password`, body)
+    return this.http.post<{ message: string }>(`${this.API_URL}/change-password`, body)
       .pipe(
         catchError(this.handleError)
       );
@@ -145,7 +145,7 @@ export class AuthService {
     this.storeRefreshToken(response.refreshToken);
     
     const user: User = {
-      id: '', // Will be updated when we fetch full profile
+      id: '', 
       username: response.username,
       email: response.email,
       firstName: '',
@@ -159,7 +159,7 @@ export class AuthService {
     this.currentUserSubject.next(user);
     this.isAuthenticatedSubject.next(true);
 
-    // Fetch complete user profile
+    
     this.getCurrentUser().subscribe();
   }
 
@@ -171,7 +171,7 @@ export class AuthService {
   }
 
   private startTokenRefreshTimer(): void {
-    // Refresh token every 50 minutes (assuming 60-minute expiry)
+    
     timer(0, 50 * 60 * 1000).subscribe(() => {
       if (this.isAuthenticated()) {
         this.refreshToken().subscribe({
@@ -194,7 +194,7 @@ export class AuthService {
     return throwError(() => error);
   };
 
-  // Token management
+  
   getToken(): string | null {
     return localStorage.getItem(this.TOKEN_KEY);
   }
@@ -226,7 +226,7 @@ export class AuthService {
     localStorage.removeItem(this.USER_KEY);
   }
 
-  // Public getters
+  
   isAuthenticated(): boolean {
     return !!this.getToken();
   }
