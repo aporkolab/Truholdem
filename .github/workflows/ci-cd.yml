@@ -8,6 +8,11 @@ on:
   pull_request:
     branches: [main, develop]
 
+# Default permissions for all jobs
+permissions:
+  contents: read
+  packages: write
+
 env:
   JAVA_VERSION: '21'
   NODE_VERSION: '20'
