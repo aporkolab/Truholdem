@@ -325,6 +325,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      attestations: write
+      id-token: write
 
     outputs:
       backend_image: ${{ steps.meta-backend.outputs.tags }}
