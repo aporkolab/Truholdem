@@ -17,7 +17,8 @@ env:
   JAVA_VERSION: '21'
   NODE_VERSION: '20'
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ghcr.io/${{ github.repository }}
+  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/truholdem-backend
+  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/truholdem-frontend
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -359,7 +360,7 @@ jobs:
         id: meta-backend
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE_PREFIX }}/backend
+          images: ${{ env.BACKEND_IMAGE }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -370,7 +371,7 @@ jobs:
         id: meta-frontend
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE_PREFIX }}/frontend
+          images: ${{ env.FRONTEND_IMAGE }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -474,8 +475,8 @@ jobs:
             
 
             
-            - Backend: `${{ env.IMAGE_PREFIX }}/backend:${{ needs.build-and-push.outputs.version }}`
-            - Frontend: `${{ env.IMAGE_PREFIX }}/frontend:${{ needs.build-and-push.outputs.version }}`
+            - Backend: `${{ env.BACKEND_IMAGE }}:${{ needs.build-and-push.outputs.version }}`
+            - Frontend: `${{ env.FRONTEND_IMAGE }}:${{ needs.build-and-push.outputs.version }}`
 
             
             ${{ steps.changelog.outputs.content }}
