@@ -23,8 +23,8 @@
   "homepage": "https://www.truholdem.aporkolab.com",
   "dependencies": {
     "@angular/animations": "^20.2.1",
-    "@angular/cli": "^20.1.5",
-    "@angular/common": "^20.2.1",
+    "@angular/cli": "^20.3.36",
+    "@angular/common": "^20.3.27",
     "@angular/compiler": "^20.2.1",
     "@angular/core": "^20.2.1",
     "@angular/forms": "^20.2.1",
@@ -40,7 +40,7 @@
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^20.1.5",
-    "@angular/cli": "^20.1.5",
+    "@angular/cli": "^20.3.36",
     "@angular/compiler-cli": "^20.2.1",
     "@types/bootstrap": "^5.2.10",
     "@types/jasmine": "~5.1.4",
