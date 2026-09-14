@@ -255,7 +255,7 @@ jobs:
           fi
 
       - name: Run Cypress E2E Tests
-        uses: cypress-io/github-action@v6
+        uses: cypress-io/github-action@v7
         with:
           working-directory: ./frontend
           browser: chrome
