@@ -124,7 +124,7 @@ Key environment variables:
 docker build -t truholdem-backend:latest ./backend
 
 # Build frontend image
-docker build -t truholdem-frontend:latest ./frontend \
+docker build -f frontend/Dockerfile -t truholdem-frontend:latest . \
   --build-arg API_URL=https://api.yourdomain.com
 ```
 

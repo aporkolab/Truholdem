@@ -318,10 +318,10 @@ export class AnalysisStore extends ComponentStore<AnalysisState> {
           rangeNotation,
           communityCards
         ).pipe(
-          tapResponse(
-            result => this.setEquityResult(result),
-            () => this.setError('Failed to calculate equity')
-          )
+          tapResponse({
+    next: result => this.setEquityResult(result),
+    error: () => this.setError('Failed to calculate equity')
+})
         );
       })
     )
@@ -344,10 +344,10 @@ export class AnalysisStore extends ComponentStore<AnalysisState> {
           rangeNotation,
           communityCards
         ).pipe(
-          tapResponse(
-            result => this.setEquityResult(result),
-            () => this.setError('Failed to calculate equity')
-          )
+          tapResponse({
+    next: result => this.setEquityResult(result),
+    error: () => this.setError('Failed to calculate equity')
+})
         );
       })
     )

@@ -1,19 +1,20 @@
 # Multi-stage build for optimal image size
 
 # Stage 1: Build frontend
-FROM node:20-alpine AS frontend-builder
+FROM node:24-alpine AS frontend-builder
 
-WORKDIR /app/frontend
+WORKDIR /app
 
-# Copy frontend package files
-COPY frontend/package*.json ./
-RUN npm ci --only=production
+# Use the same lockfile and build dependencies as CI.
+COPY package.json package-lock.json ./
+COPY frontend/package.json ./frontend/package.json
+RUN CYPRESS_INSTALL_BINARY=0 PUPPETEER_SKIP_DOWNLOAD=true npm ci --workspace=frontend --ignore-scripts
 
 # Copy frontend source
-COPY frontend/ ./
+COPY frontend/ ./frontend/
 
 # Build frontend
-RUN npm run build:prod
+RUN npm run build:prod --workspace=frontend
 
 # Stage 2: Build backend
 FROM maven:3.9.4-eclipse-temurin-21-alpine AS backend-builder
@@ -46,10 +47,7 @@ RUN addgroup -g 1001 -S truholdem && \
 WORKDIR /app
 
 # Copy the built JAR from backend builder stage
-COPY --from=backend-builder /app/backend/target/truholdem-*.jar app.jar
-
-# Copy application configuration
-COPY backend/src/main/resources/application*.yml ./
+COPY --from=backend-builder /app/backend/target/truholdem-*.war app.war
 
 # Change ownership to non-root user
 RUN chown -R truholdem:truholdem /app
@@ -62,7 +60,7 @@ EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8080/actuator/health || exit 1
+    CMD curl -f http://localhost:8080/api/actuator/health || exit 1
 
 # JVM optimization for containers
 ENV JAVA_OPTS="-XX:+UseContainerSupport \
@@ -70,7 +68,7 @@ ENV JAVA_OPTS="-XX:+UseContainerSupport \
                -XX:+UseG1GC \
                -XX:+UseStringDeduplication \
                -Djava.security.egd=file:/dev/./urandom \
-               -Dspring.profiles.active=production"
+               -Dspring.profiles.active=prod"
 
 # Run the application
-ENTRYPOINT exec java $JAVA_OPTS -jar app.jar
+ENTRYPOINT exec java $JAVA_OPTS -jar app.war

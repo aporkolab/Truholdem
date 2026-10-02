@@ -1,95 +1,117 @@
-
-
-
+# npm workspaces share the root lockfile; do not add overlapping npm entries.
+# Security fixes are grouped separately and are not delayed by the monthly schedule.
 version: 2
 updates:
-  
-  - package-ecosystem: "maven"
-    directory: "/backend"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "backend"
-    commit-message:
-      prefix: "build(deps)"
-    groups:
-      spring:
-        patterns:
-          - "org.springframework*"
-      testing:
-        patterns:
-          - "org.junit*"
-          - "org.mockito*"
-          - "org.assertj*"
-
-  
-  - package-ecosystem: "npm"
-    directory: "/frontend"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "frontend"
-    commit-message:
-      prefix: "build(deps)"
-    groups:
-      angular:
-        patterns:
-          - "@angular*"
-      testing:
-        patterns:
-          - "jest*"
-          - "cypress*"
-          - "@types/*"
-
-  
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 3
-    labels:
-      - "dependencies"
-      - "tooling"
-    commit-message:
-      prefix: "build(deps)"
-
-  
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 3
-    labels:
-      - "dependencies"
-      - "ci"
-    commit-message:
-      prefix: "ci(deps)"
-
-  
-  - package-ecosystem: "docker"
-    directory: "/backend"
-    schedule:
-      interval: "monthly"
-    labels:
-      - "dependencies"
-      - "docker"
-    commit-message:
-      prefix: "build(docker)"
-
-  - package-ecosystem: "docker"
-    directory: "/frontend"
-    schedule:
-      interval: "monthly"
-    labels:
-      - "dependencies"
-      - "docker"
-    commit-message:
-      prefix: "build(docker)"
+- package-ecosystem: maven
+  directory: /backend
+  schedule:
+    interval: monthly
+    time: 09:00
+    timezone: Europe/Budapest
+  open-pull-requests-limit: 3
+  labels:
+  - dependencies
+  - backend
+  commit-message:
+    prefix: build(deps)
+  groups:
+    security:
+      patterns:
+      - '*'
+      applies-to: security-updates
+    spring:
+      patterns:
+      - org.springframework*
+      - org.springdoc*
+    runtime:
+      patterns:
+      - '*'
+      update-types:
+      - minor
+      - patch
+- package-ecosystem: npm
+  directory: /
+  # Angular 22 requires TypeScript 6; migrate compiler majors with the framework.
+  ignore:
+  - dependency-name: typescript
+    update-types:
+    - version-update:semver-major
+  schedule:
+    interval: monthly
+    time: 09:00
+    timezone: Europe/Budapest
+  open-pull-requests-limit: 3
+  labels:
+  - dependencies
+  - frontend
+  commit-message:
+    prefix: build(deps)
+  groups:
+    security:
+      patterns:
+      - '*'
+      applies-to: security-updates
+    angular:
+      patterns:
+      - '@angular/*'
+      - '@angular-devkit/*'
+      - '@angular-eslint/*'
+      - angular-eslint
+      - '@ngrx/*'
+      - typescript
+      - zone.js
+      - jest-preset-angular
+    tooling:
+      patterns:
+      - '*'
+      update-types:
+      - minor
+      - patch
+- package-ecosystem: github-actions
+  directory: /
+  schedule:
+    interval: monthly
+    time: 09:00
+    timezone: Europe/Budapest
+  open-pull-requests-limit: 3
+  labels:
+  - dependencies
+  - ci
+  commit-message:
+    prefix: build(deps)
+  groups:
+    actions:
+      patterns:
+      - '*'
+- package-ecosystem: docker
+  directory: /backend
+  schedule:
+    interval: monthly
+    time: 09:00
+    timezone: Europe/Budapest
+  open-pull-requests-limit: 3
+  labels:
+  - dependencies
+  - docker
+  commit-message:
+    prefix: build(deps)
+  groups:
+    images:
+      patterns:
+      - '*'
+- package-ecosystem: docker
+  directory: /frontend
+  schedule:
+    interval: monthly
+    time: 09:00
+    timezone: Europe/Budapest
+  open-pull-requests-limit: 3
+  labels:
+  - dependencies
+  - docker
+  commit-message:
+    prefix: build(deps)
+  groups:
+    images:
+      patterns:
+      - '*'

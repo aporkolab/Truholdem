@@ -14,7 +14,8 @@ import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
-import io.opentelemetry.semconv.ResourceAttributes;
+import io.opentelemetry.semconv.ServiceAttributes;
+import io.opentelemetry.semconv.DeploymentAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,9 +52,9 @@ public class ObservabilityConfig {
     public Resource otelResource() {
         return Resource.getDefault()
                 .merge(Resource.create(Attributes.builder()
-                        .put(ResourceAttributes.SERVICE_NAME, serviceName)
-                        .put(ResourceAttributes.SERVICE_VERSION, serviceVersion)
-                        .put(ResourceAttributes.DEPLOYMENT_ENVIRONMENT, 
+                        .put(ServiceAttributes.SERVICE_NAME, serviceName)
+                        .put(ServiceAttributes.SERVICE_VERSION, serviceVersion)
+                        .put(DeploymentAttributes.DEPLOYMENT_ENVIRONMENT_NAME,
                              System.getenv().getOrDefault("SPRING_PROFILES_ACTIVE", "development"))
                         .put("service.namespace", "truholdem")
                         .put("service.instance.id", java.util.UUID.randomUUID().toString())

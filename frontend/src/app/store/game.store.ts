@@ -535,32 +535,30 @@ export class GameStore extends ComponentStore<GameStoreState> {
       switchMap(players => {
         const playersToSend = players || this.getDefaultPlayers();
         return this.http.post<Game>(`${this.apiUrl}/start`, playersToSend).pipe(
-          tapResponse(
-            game => {
-              console.log('[GameStore] Raw game from server:', JSON.stringify(game, null, 2));
-              const idx = game.currentPlayerIndex ?? -1;
-              console.log('[GameStore] currentPlayerIndex:', idx);
-              console.log('[GameStore] Players:', game.players?.map(p => ({
-                name: p.name,
-                isBot: p.isBot,
-                seatPosition: p.seatPosition
-              })));
-
-              this.setGame(game);
-              this.logDebug('Game started', game);
-
-              // If the first player to act is a bot, trigger bot processing
-              if (idx >= 0 && idx < (game.players?.length ?? 0)) {
-                const currentPlayer = game.players[idx];
-                console.log('[GameStore] Current player should be:', currentPlayer.name, 'isBot:', currentPlayer.isBot);
-                if (currentPlayer.isBot && !currentPlayer.folded) {
-                  console.log('[GameStore] First player is a bot, triggering processBots');
-                  setTimeout(() => this.processBots(), 100);
-                }
-              }
-            },
-            (error: HttpErrorResponse) => this.handleError(error)
-          )
+          tapResponse({
+    next: game => {
+        console.log('[GameStore] Raw game from server:', JSON.stringify(game, null, 2));
+        const idx = game.currentPlayerIndex ?? -1;
+        console.log('[GameStore] currentPlayerIndex:', idx);
+        console.log('[GameStore] Players:', game.players?.map(p => ({
+            name: p.name,
+            isBot: p.isBot,
+            seatPosition: p.seatPosition
+        })));
+        this.setGame(game);
+        this.logDebug('Game started', game);
+        // If the first player to act is a bot, trigger bot processing
+        if (idx >= 0 && idx < (game.players?.length ?? 0)) {
+            const currentPlayer = game.players[idx];
+            console.log('[GameStore] Current player should be:', currentPlayer.name, 'isBot:', currentPlayer.isBot);
+            if (currentPlayer.isBot && !currentPlayer.folded) {
+                console.log('[GameStore] First player is a bot, triggering processBots');
+                setTimeout(() => this.processBots(), 100);
+            }
+        }
+    },
+    error: (error: HttpErrorResponse) => this.handleError(error)
+})
         );
       })
     )
@@ -571,13 +569,13 @@ export class GameStore extends ComponentStore<GameStoreState> {
     trigger$.pipe(
       switchMap(() =>
         this.http.get<Game>(`${this.apiUrl}/status`).pipe(
-          tapResponse(
-            game => {
-              this.setGame(game);
-              this.addToHistory(game);
-            },
-            (error: HttpErrorResponse) => this.handleError(error)
-          )
+          tapResponse({
+    next: game => {
+        this.setGame(game);
+        this.addToHistory(game);
+    },
+    error: (error: HttpErrorResponse) => this.handleError(error)
+})
         )
       )
     )
@@ -589,24 +587,23 @@ export class GameStore extends ComponentStore<GameStoreState> {
       tap(() => this.setLoading(true)),
       switchMap(() =>
         this.http.post<Game>(`${this.apiUrl}/new-match`, {}).pipe(
-          tapResponse(
-            game => {
-              this.setGame(game);
-              this.clearLastAction();
-              this.logDebug('New hand started', game);
-
-              // If the first player to act is a bot, trigger bot processing
-              const idx = game.currentPlayerIndex ?? -1;
-              if (idx >= 0 && idx < (game.players?.length ?? 0)) {
-                const currentPlayer = game.players[idx];
-                if (currentPlayer.isBot && !currentPlayer.folded) {
-                  console.log('[GameStore] New hand: first player is a bot, triggering processBots');
-                  setTimeout(() => this.processBots(), 100);
-                }
-              }
-            },
-            (error: HttpErrorResponse) => this.handleError(error)
-          )
+          tapResponse({
+    next: game => {
+        this.setGame(game);
+        this.clearLastAction();
+        this.logDebug('New hand started', game);
+        // If the first player to act is a bot, trigger bot processing
+        const idx = game.currentPlayerIndex ?? -1;
+        if (idx >= 0 && idx < (game.players?.length ?? 0)) {
+            const currentPlayer = game.players[idx];
+            if (currentPlayer.isBot && !currentPlayer.folded) {
+                console.log('[GameStore] New hand: first player is a bot, triggering processBots');
+                setTimeout(() => this.processBots(), 100);
+            }
+        }
+    },
+    error: (error: HttpErrorResponse) => this.handleError(error)
+})
         )
       )
     )
@@ -617,13 +614,13 @@ export class GameStore extends ComponentStore<GameStoreState> {
     trigger$.pipe(
       switchMap(() =>
         this.http.post(`${this.apiUrl}/reset`, {}, { responseType: 'text' }).pipe(
-          tapResponse(
-            () => {
-              this.reset();
-              this.logDebug('Game reset');
-            },
-            (error: HttpErrorResponse) => this.handleError(error)
-          )
+          tapResponse({
+    next: () => {
+        this.reset();
+        this.logDebug('Game reset');
+    },
+    error: (error: HttpErrorResponse) => this.handleError(error)
+})
         )
       )
     )
@@ -684,27 +681,26 @@ export class GameStore extends ComponentStore<GameStoreState> {
             });
           }),
           switchMap(() => this.http.get<Game>(`${this.apiUrl}/status`)),
-          tapResponse(
-            game => {
-              // Debug: log who the next player is
-              const idx = game.currentPlayerIndex ?? -1;
-              console.log('[GameStore] After action - currentPlayerIndex:', idx);
-              if (idx >= 0 && idx < (game.players?.length ?? 0)) {
-                const nextPlayer = game.players[idx];
-                console.log('[GameStore] Next player:', nextPlayer.name, 'isBot:', nextPlayer.isBot);
-              }
-              console.log('[GameStore] All players isBot status:', game.players?.map(p => ({ name: p.name, isBot: p.isBot })));
-
-              this.setGame(game);
-              this.addToHistory(game);
-              this.setActionInProgress(false);
-              this.logDebug('Action completed', { action, playerId });
-            },
-            (error: HttpErrorResponse) => {
-              this.handleError(error);
-              this.setActionInProgress(false);
-            }
-          )
+          tapResponse({
+    next: game => {
+        // Debug: log who the next player is
+        const idx = game.currentPlayerIndex ?? -1;
+        console.log('[GameStore] After action - currentPlayerIndex:', idx);
+        if (idx >= 0 && idx < (game.players?.length ?? 0)) {
+            const nextPlayer = game.players[idx];
+            console.log('[GameStore] Next player:', nextPlayer.name, 'isBot:', nextPlayer.isBot);
+        }
+        console.log('[GameStore] All players isBot status:', game.players?.map(p => ({ name: p.name, isBot: p.isBot })));
+        this.setGame(game);
+        this.addToHistory(game);
+        this.setActionInProgress(false);
+        this.logDebug('Action completed', { action, playerId });
+    },
+    error: (error: HttpErrorResponse) => {
+        this.handleError(error);
+        this.setActionInProgress(false);
+    }
+})
         );
       })
     )
@@ -738,45 +734,38 @@ export class GameStore extends ComponentStore<GameStoreState> {
           `${this.apiUrl}/bot-action/${currentBot.id}`,
           {}
         ).pipe(
-          tapResponse(
-            game => {
-              // Log the game state after bot action
-              const nextIdx = game.currentPlayerIndex ?? -1;
-              const nextPlayer = nextIdx >= 0 && nextIdx < (game.players?.length ?? 0)
-                ? game.players[nextIdx]
-                : null;
-              console.log('[GameStore] After bot action - phase:', game.phase,
-                'currentPlayerIndex:', nextIdx,
-                'nextPlayer:', nextPlayer?.name,
-                'nextPlayerIsBot:', nextPlayer?.isBot);
-
-              const botPlayer = game.players.find(p => p.id === currentBot.id);
-              if (botPlayer) {
-                this.recordAction({
-                  type: this.inferActionType(botPlayer),
-                  playerId: currentBot.id,
-                  playerName: currentBot.name ?? 'Bot',
-                  amount: botPlayer.betAmount,
-                  timestamp: Date.now()
-                });
-              }
-
-              this.logDebug('Bot action executed', { botId: currentBot.id });
-
-              // CRITICAL: Set processingBots to false BEFORE updating game state
-              // Otherwise currentBot$ emits while processingBots is still true,
-              // causing the next bot to be skipped
-              this.setProcessingBots(false);
-
-              // Now update game state - this triggers currentBot$ which may call processBots again
-              this.setGame(game);
-              this.addToHistory(game);
-            },
-            (error: HttpErrorResponse) => {
-              this.handleError(error);
-              this.setProcessingBots(false);
-            }
-          ),
+          tapResponse({
+    next: game => {
+        // Log the game state after bot action
+        const nextIdx = game.currentPlayerIndex ?? -1;
+        const nextPlayer = nextIdx >= 0 && nextIdx < (game.players?.length ?? 0)
+            ? game.players[nextIdx]
+            : null;
+        console.log('[GameStore] After bot action - phase:', game.phase, 'currentPlayerIndex:', nextIdx, 'nextPlayer:', nextPlayer?.name, 'nextPlayerIsBot:', nextPlayer?.isBot);
+        const botPlayer = game.players.find(p => p.id === currentBot.id);
+        if (botPlayer) {
+            this.recordAction({
+                type: this.inferActionType(botPlayer),
+                playerId: currentBot.id,
+                playerName: currentBot.name ?? 'Bot',
+                amount: botPlayer.betAmount,
+                timestamp: Date.now()
+            });
+        }
+        this.logDebug('Bot action executed', { botId: currentBot.id });
+        // CRITICAL: Set processingBots to false BEFORE updating game state
+        // Otherwise currentBot$ emits while processingBots is still true,
+        // causing the next bot to be skipped
+        this.setProcessingBots(false);
+        // Now update game state - this triggers currentBot$ which may call processBots again
+        this.setGame(game);
+        this.addToHistory(game);
+    },
+    error: (error: HttpErrorResponse) => {
+        this.handleError(error);
+        this.setProcessingBots(false);
+    }
+}),
           catchError(() => {
             this.setProcessingBots(false);
             return EMPTY;

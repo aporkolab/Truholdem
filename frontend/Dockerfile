@@ -1,33 +1,29 @@
 # Build stage
-FROM node:20-alpine AS build
+FROM node:24-alpine AS build
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Build from the repository root using the shared workspace lockfile.
+COPY package.json package-lock.json ./
+COPY frontend/package.json ./frontend/package.json
+RUN CYPRESS_INSTALL_BINARY=0 PUPPETEER_SKIP_DOWNLOAD=true npm ci --workspace=frontend --ignore-scripts
 
-# Install ALL dependencies (devDependencies needed for Angular build)
-# Using npm install instead of npm ci because this is part of a monorepo
-# and the lock file is managed at root level
-RUN npm install --legacy-peer-deps
-
-# Copy source code
-COPY . .
+COPY frontend ./frontend
 
 # Build argument for API URL (Angular uses environment files, not env vars at runtime)
 ARG API_URL=http://localhost:8080/api
 
 # Build the application
-RUN npm run build
+RUN npm run build --workspace=frontend
 
 # Production stage
 FROM nginx:alpine
 
 # Copy custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy built assets from build stage
-COPY --from=build /app/dist/texas-holdem-frontend /usr/share/nginx/html
+COPY --from=build /app/frontend/dist/texas-holdem-frontend /usr/share/nginx/html
 
 # Add non-root user for security
 RUN addgroup -g 1001 -S nodejs && adduser -S angular -u 1001
