@@ -3,6 +3,8 @@
     "target": "ES2022",
     "module": "ES2022",
     "moduleResolution": "node",
+    "rootDir": ".",
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "outDir": "../out-tsc/cypress",
     "types": ["cypress", "node"],
