@@ -398,10 +398,10 @@ export class TournamentStore extends ComponentStore<TournamentStoreState> {
       tap(() => this.setLoading(true)),
       switchMap(() =>
         this.http.get<TournamentListItem[]>(`${this.apiUrl}/list`).pipe(
-          tapResponse(
-            tournaments => this.setTournaments(tournaments),
-            (error: HttpErrorResponse) => this.handleError(error)
-          )
+          tapResponse({
+    next: tournaments => this.setTournaments(tournaments),
+    error: (error: HttpErrorResponse) => this.handleError(error)
+})
         )
       )
     )
@@ -413,21 +413,18 @@ export class TournamentStore extends ComponentStore<TournamentStoreState> {
       tap(() => this.setLoading(true)),
       switchMap(tournamentId =>
         this.http.get<Tournament>(`${this.apiUrl}/${tournamentId}`).pipe(
-          tapResponse(
-            tournament => {
-              this.setActiveTournament(tournament);
-
-              const myPlayer = tournament.registeredPlayers.find(p => !p.isBot);
-              if (myPlayer) {
-                this.setMyPlayer(myPlayer);
-                const myTable = tournament.tables.find(t =>
-                  t.players.some(p => p.id === myPlayer.id)
-                );
-                this.setMyTable(myTable ?? null);
-              }
-            },
-            (error: HttpErrorResponse) => this.handleError(error)
-          )
+          tapResponse({
+    next: tournament => {
+        this.setActiveTournament(tournament);
+        const myPlayer = tournament.registeredPlayers.find(p => !p.isBot);
+        if (myPlayer) {
+            this.setMyPlayer(myPlayer);
+            const myTable = tournament.tables.find(t => t.players.some(p => p.id === myPlayer.id));
+            this.setMyTable(myTable ?? null);
+        }
+    },
+    error: (error: HttpErrorResponse) => this.handleError(error)
+})
         )
       )
     )
@@ -442,18 +439,17 @@ export class TournamentStore extends ComponentStore<TournamentStoreState> {
           `${this.apiUrl}/${tournamentId}/register`,
           { playerName }
         ).pipe(
-          tapResponse(
-            player => {
-              this.setMyPlayer(player);
-              this.setRegistering(false);
-
-              this.loadTournament(tournamentId);
-            },
-            (error: HttpErrorResponse) => {
-              this.handleError(error);
-              this.setRegistering(false);
-            }
-          )
+          tapResponse({
+    next: player => {
+        this.setMyPlayer(player);
+        this.setRegistering(false);
+        this.loadTournament(tournamentId);
+    },
+    error: (error: HttpErrorResponse) => {
+        this.handleError(error);
+        this.setRegistering(false);
+    }
+})
         )
       )
     )
@@ -475,14 +471,14 @@ export class TournamentStore extends ComponentStore<TournamentStoreState> {
           { playerId: myPlayer.id },
           { responseType: 'text' }
         ).pipe(
-          tapResponse(
-            () => {
-              this.setMyPlayer(null);
-              this.setMyTable(null);
-              this.loadTournament(tournamentId);
-            },
-            (error: HttpErrorResponse) => this.handleError(error)
-          )
+          tapResponse({
+    next: () => {
+        this.setMyPlayer(null);
+        this.setMyTable(null);
+        this.loadTournament(tournamentId);
+    },
+    error: (error: HttpErrorResponse) => this.handleError(error)
+})
         );
       })
     )

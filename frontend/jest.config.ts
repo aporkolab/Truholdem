@@ -11,7 +11,7 @@ module.exports = {
     '^@app/(.*)$': '<rootDir>/src/app/$1',
     '^@env/(.*)$': '<rootDir>/src/environments/$1',
   },
-  transformIgnorePatterns: ['node_modules/(?!@angular|rxjs|@ngrx)'],
+  transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$|@angular|rxjs|@ngrx)'],
   testEnvironment: 'jsdom',
   collectCoverageFrom: [
     'src/**/*.ts',
@@ -30,7 +30,6 @@ module.exports = {
   },
   coverageReporters: ['text', 'lcov', 'html'],
   moduleFileExtensions: ['ts', 'html', 'js', 'json'],
-  resolver: 'jest-preset-angular/build/resolvers/ng-jest-resolver.js',
   transform: {
     '^.+\\.(ts|js|mjs|html|svg)$': [
       'jest-preset-angular',

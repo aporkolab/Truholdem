@@ -38,6 +38,7 @@ module.exports = tseslint.config(
       ...angular.configs.templateRecommended,
       ...angular.configs.templateAccessibility,
     ],
-    rules: {},
+    // Preserve the existing template syntax during the dependency upgrade.
+    rules: { "@angular-eslint/template/prefer-control-flow": "off" },
   }
 );

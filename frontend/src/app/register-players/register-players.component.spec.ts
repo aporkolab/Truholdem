@@ -122,12 +122,12 @@ describe('RegisterPlayersComponent', () => {
   describe('Remove Player', () => {
     it('should remove player at index', () => {
       const initialCount = component.players.length;
-      const removedName = component.players[1].name;
+      const removedPlayer = component.players[1];
       
       component.removePlayer(1);
       
       expect(component.players.length).toBe(initialCount - 1);
-      expect(component.players.find(p => p.name === removedName)).toBeUndefined();
+      expect(component.players).not.toContain(removedPlayer);
     });
 
     it('should remove first player', () => {
