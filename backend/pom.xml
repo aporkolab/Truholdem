@@ -26,7 +26,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <!-- Skip JaCoCo on Java 25+ due to class file version incompatibility -->
         <jacoco.skip>true</jacoco.skip>
-        <opentelemetry.version>1.65.0</opentelemetry.version>
+        <opentelemetry.version>1.66.0</opentelemetry.version>
         <opentelemetry-instrumentation.version>2.31.1</opentelemetry-instrumentation.version>
     </properties>
 
