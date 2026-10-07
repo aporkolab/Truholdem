@@ -12,7 +12,8 @@ async function main() {
     }
   });
 
-  assert.equal(result.status, 'finished', 'Cypress must finish running the negative regression');
+  assert.notEqual(result.status, 'failed', 'Cypress must execute the negative regression');
+  assert.equal(result.runs.length, 1, 'Exactly one regression spec must run');
   assert.equal(result.totalTests, 1, 'Exactly one deliberate violation must be tested');
   assert.equal(result.totalFailed, 1, 'The unnamed button must fail cy.checkA11y()');
   assert.equal(result.totalPassed, 0, 'A no-op accessibility helper must fail this regression gate');
