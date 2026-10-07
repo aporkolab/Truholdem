@@ -30,7 +30,7 @@ jobs:
   
   backend-test:
     name: Backend Tests & Coverage
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     services:
       postgres:
         image: postgres:16-alpine
@@ -105,7 +105,7 @@ jobs:
   
   frontend-test:
     name: Frontend Tests & Coverage
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout
@@ -150,7 +150,7 @@ jobs:
   
   e2e-test:
     name: E2E Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [backend-test, frontend-test]
 
     steps:
@@ -287,7 +287,7 @@ jobs:
   
   security-scan:
     name: Security Scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [backend-test, frontend-test]
     permissions:
       contents: read
@@ -331,7 +331,7 @@ jobs:
   
   build-and-push:
     name: Build & Push Docker Images
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [e2e-test, security-scan]
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
     permissions:
@@ -422,7 +422,7 @@ jobs:
   
   deploy:
     name: Deploy to Production
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [build-and-push]
     if: startsWith(github.ref, 'refs/tags/v')
     environment:
@@ -461,7 +461,7 @@ jobs:
   
   release:
     name: Create Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [build-and-push]
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
