@@ -37,8 +37,7 @@ public class TestSecurityConfig {
     @Bean
     @Primary
     public AuthenticationManager testAuthenticationManager() {
-        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
-        authenticationProvider.setUserDetailsService(testUserDetailsService());
+        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider(testUserDetailsService());
         authenticationProvider.setPasswordEncoder(testPasswordEncoder());
 
         return new ProviderManager(authenticationProvider);
