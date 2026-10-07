@@ -51,5 +51,11 @@
     "node": "^22.22.3 || ^24.15.0 || >=26.0.0",
     "npm": ">=10.0.0"
   },
-  "packageManager": "npm@10.9.0"
+  "packageManager": "npm@10.9.0",
+  "overrides": {
+    "shell-quote": "1.11.0",
+    "@istanbuljs/load-nyc-config": {
+      "js-yaml": "4.3.2"
+    }
+  }
 }
