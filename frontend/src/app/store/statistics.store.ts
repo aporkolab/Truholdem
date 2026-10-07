@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { ComponentStore } from '@ngrx/component-store';
+import { tapResponse } from '@ngrx/operators';
 import { Observable, EMPTY } from 'rxjs';
 import { switchMap, tap, withLatestFrom } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
@@ -335,10 +336,10 @@ export class StatisticsStore extends ComponentStore<StatisticsStoreState> {
       tap(() => this.setLoading(true)),
       switchMap(playerId =>
         this.http.get<PlayerStatistics>(`${this.apiUrl}/statistics/player/${playerId}`).pipe(
-          tapResponse(
-            stats => this.setPlayerStats(stats),
-            (error: HttpErrorResponse) => this.handleError(error)
-          )
+          tapResponse({
+            next: stats => this.setPlayerStats(stats),
+            error: (error: HttpErrorResponse) => this.handleError(error)
+          })
         )
       )
     )
@@ -350,13 +351,13 @@ export class StatisticsStore extends ComponentStore<StatisticsStoreState> {
       tap(() => this.setLoading(true)),
       switchMap(() =>
         this.http.get<PlayerStatistics[]>(`${this.apiUrl}/statistics/all`).pipe(
-          tapResponse(
-            stats => {
+          tapResponse({
+            next: stats => {
               this.setAllPlayersStats(stats);
               this.setLoading(false);
             },
-            (error: HttpErrorResponse) => this.handleError(error)
-          )
+            error: (error: HttpErrorResponse) => this.handleError(error)
+          })
         )
       )
     )
@@ -372,13 +373,13 @@ export class StatisticsStore extends ComponentStore<StatisticsStoreState> {
           `${this.apiUrl}/statistics/leaderboard`,
           { params: { limit: limit?.toString() ?? '10' } }
         ).pipe(
-          tapResponse(
-            leaderboard => {
+          tapResponse({
+            next: leaderboard => {
               this.setLeaderboard(leaderboard);
               this.setLoading(false);
             },
-            (error: HttpErrorResponse) => this.handleError(error)
-          )
+            error: (error: HttpErrorResponse) => this.handleError(error)
+          })
         );
       })
     )
@@ -394,8 +395,8 @@ export class StatisticsStore extends ComponentStore<StatisticsStoreState> {
           `${this.apiUrl}/hand-history/player/${playerId}`,
           { params: { page: page.toString(), size: pageSize.toString() } }
         ).pipe(
-          tapResponse(
-            response => {
+          tapResponse({
+            next: response => {
               this.setHandHistory(response.content);
               this.setPagination({
                 currentPage: response.number,
@@ -403,8 +404,8 @@ export class StatisticsStore extends ComponentStore<StatisticsStoreState> {
               });
               this.setLoading(false);
             },
-            (error: HttpErrorResponse) => this.handleError(error)
-          )
+            error: (error: HttpErrorResponse) => this.handleError(error)
+          })
         )
       )
     )
@@ -425,8 +426,8 @@ export class StatisticsStore extends ComponentStore<StatisticsStoreState> {
           `${this.apiUrl}/hand-history/player/${playerId}`,
           { params: { page: nextPage.toString(), size: pageSize.toString() } }
         ).pipe(
-          tapResponse(
-            response => {
+          tapResponse({
+            next: response => {
               this.appendHandHistory(response.content);
               this.setPagination({
                 currentPage: response.number,
@@ -434,8 +435,8 @@ export class StatisticsStore extends ComponentStore<StatisticsStoreState> {
               });
               this.setLoading(false);
             },
-            (error: HttpErrorResponse) => this.handleError(error)
-          )
+            error: (error: HttpErrorResponse) => this.handleError(error)
+          })
         );
       })
     )
@@ -447,13 +448,13 @@ export class StatisticsStore extends ComponentStore<StatisticsStoreState> {
       tap(() => this.setLoading(true)),
       switchMap(handId =>
         this.http.get<HandHistoryEntry>(`${this.apiUrl}/hand-history/${handId}`).pipe(
-          tapResponse(
-            hand => {
+          tapResponse({
+            next: hand => {
               this.setSelectedHand(hand);
               this.setLoading(false);
             },
-            (error: HttpErrorResponse) => this.handleError(error)
-          )
+            error: (error: HttpErrorResponse) => this.handleError(error)
+          })
         )
       )
     )
