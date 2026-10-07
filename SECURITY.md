@@ -43,4 +43,16 @@ We regularly update dependencies to patch known vulnerabilities:
 - Dependabot monitors and creates PRs for updates
 - Security scanning runs on every PR via Trivy
 
+### Temporary npm overrides
+
+- `shell-quote` is pinned to `1.11.0` to fix GHSA-pqg4-j6r4-53mv. Both
+  `concurrently` and `launch-editor` use this version; `concurrently@9.2.4`
+  otherwise pins the vulnerable `1.9.0`. Remove the override when the resolved
+  parent dependencies require a patched version.
+- `@istanbuljs/load-nyc-config@1.1.0` uses `js-yaml@4.3.2`, whose `load()` API
+  supports its YAML configuration loader. This replaces the `js-yaml 3 →
+  argparse 1 → sprintf-js` development dependency chain. There is no patched
+  `sprintf-js` release for GHSA-hp3w-g68c-fv3c. Remove this override once the
+  upstream loader no longer depends on `js-yaml 3`.
+
 Thank you for helping keep TruHoldem secure!
