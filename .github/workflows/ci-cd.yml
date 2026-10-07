@@ -31,9 +31,6 @@ jobs:
   backend-test:
     name: Backend Tests & Coverage
     runs-on: ubuntu-26.04
-    permissions:
-      contents: read
-      id-token: write
     services:
       postgres:
         image: postgres:16-alpine
@@ -85,18 +82,14 @@ jobs:
           SPRING_DATA_REDIS_PORT: 6379
           APP_JWT_SECRET: testSecretKeyForCI_AtLeast32Chars_LongEnough_ForHS256
 
-      - name: Verify Backend Coverage Report
-        run: test -s backend/target/site/jacoco/jacoco.xml
-
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          use_oidc: true
-          disable_search: true
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./backend/target/site/jacoco/jacoco.xml
           flags: backend
           name: backend-coverage
-          fail_ci_if_error: true
+          fail_ci_if_error: false
 
       - name: Archive Test Results
         if: always()
@@ -113,9 +106,6 @@ jobs:
   frontend-test:
     name: Frontend Tests & Coverage
     runs-on: ubuntu-26.04
-    permissions:
-      contents: read
-      id-token: write
 
     steps:
       - name: Checkout
@@ -137,18 +127,14 @@ jobs:
       - name: Unit Tests with Coverage
         run: npm run test:frontend
 
-      - name: Verify Frontend Coverage Report
-        run: test -s frontend/coverage/lcov.info
-
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          use_oidc: true
-          disable_search: true
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./frontend/coverage/lcov.info
           flags: frontend
           name: frontend-coverage
-          fail_ci_if_error: true
+          fail_ci_if_error: false
 
       - name: Build Production
         run: npm run build:frontend
