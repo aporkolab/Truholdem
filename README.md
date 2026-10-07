@@ -9,7 +9,7 @@
 
 **A production-ready Texas Hold'em poker platform with advanced Bot AI, multi-table tournaments, real-time WebSocket gameplay, and comprehensive observability.**
 
-> 🎯 **Portfolio Project** — Demonstrates senior-level full-stack development with enterprise-grade architecture patterns, comprehensive test coverage (2,500+ tests), and production-ready DevOps infrastructure.
+> 🎯 **Portfolio Project** — Demonstrates senior-level full-stack development with enterprise-grade architecture patterns, automated testing (2,200+ tests in the CI suite), and production-ready DevOps infrastructure.
 
 <p align="center">
   <img src="frontend/src/assets/Baccaratio.png" alt="TruHoldem Logo" width="200"/>
@@ -104,6 +104,7 @@
 - Docker & Docker Compose
 - Java 21+ (for local development)
 - Node.js `^22.22.3 || ^24.15.0 || >=26.0.0` (for local development)
+- npm 10+ (the root manifest pins npm 10.9.0)
 - PostgreSQL 16 (or use Docker)
 - Redis 7 (optional, for WebSocket clustering)
 
@@ -138,10 +139,9 @@ docker-compose up -d
 cd backend
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 
-# Frontend (Terminal 2)
-cd frontend
-npm install
-npm run dev
+# Frontend (Terminal 2, from the repository root)
+npm ci
+npm run dev:frontend
 ```
 
 #### Development Script Options
@@ -182,7 +182,7 @@ TruHoldem/
 │   │   ├── security/          # JWT & authentication
 │   │   ├── service/           # Business logic
 │   │   └── websocket/         # WebSocket infrastructure
-│   └── src/test/              # Test suites (1,000+ tests)
+│   └── src/test/              # Unit and integration test sources
 │
 ├── frontend/                   # Angular application
 │   ├── src/app/
@@ -194,7 +194,7 @@ TruHoldem/
 │   │   ├── services/          # API & state services
 │   │   ├── store/             # NgRx ComponentStore
 │   │   └── tournament/        # Tournament components
-│   └── cypress/               # E2E tests (190+ tests)
+│   └── cypress/               # Cypress E2E tests
 │
 ├── docker/                    # Docker configurations
 │   ├── grafana/              # Dashboard definitions
@@ -269,29 +269,36 @@ TruHoldem/
 
 ### Test Coverage Summary
 
-| Layer | Tests | Coverage |
-|-------|-------|----------|
-| Backend Unit/Integration | 1,064 | 85%+ |
-| Frontend Unit (Jest) | 1,255 | 80%+ |
-| E2E (Cypress) | 194 | Critical paths |
-| **Total** | **2,513** | — |
+Snapshot from the [successful test jobs on October 7, 2026](https://github.com/aporkolab/Truholdem/actions/runs/37662939147):
+
+| Layer | Reported tests | Passed | Skipped |
+|-------|----------------|--------|---------|
+| Backend Unit/Integration (Maven) | 875 | 863 | 12 |
+| Frontend Unit (Jest) | 1,264 | 1,257 | 7 |
+| E2E (Cypress) | 91 | 91 | 0 |
+| **Total** | **2,230** | **2,211** | **19** |
+
+These are CI results, not a count of every test source in the repository. Maven's default configuration excludes `*IT.java` and `PokerGameIntegrationTest.java`; disabled tests are reported as skipped. See the latest [CI runs](https://github.com/aporkolab/Truholdem/actions/workflows/ci-cd.yml) for subsequent additions and current results.
+
+Coverage gates are configured in `backend/pom.xml` (60% instruction coverage) and `frontend/jest.config.ts` (60% statements, lines and functions; 50% branches).
 
 ### Running Tests
 
 ```bash
-# Backend tests
-cd backend
-./mvnw verify
+# Install workspace dependencies from the repository root
+npm ci
 
-# Frontend unit tests
-cd frontend
-npm run test:ci
+# Backend tests and coverage gates
+(cd backend && ./mvnw verify)
 
-# Frontend E2E tests
-npm run e2e:ci
+# Frontend unit tests and coverage gates
+npm run test:frontend
 
-# All tests
-npm run test:all
+# Frontend E2E tests (start the backend and frontend first)
+npm run e2e:ci --workspace=frontend
+
+# Frontend unit and E2E suites together
+npm run test:all --workspace=frontend
 ```
 
 ### Test Categories
@@ -343,7 +350,7 @@ The bot AI uses a sophisticated decision-making framework:
 | [TOURNAMENTS.md](docs/TOURNAMENTS.md) | Tournament system documentation |
 | [ANALYSIS.md](docs/ANALYSIS.md) | Hand analysis & equity calculator |
 | [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Production deployment guide |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
+| [CONTRIBUTING.md](docs/CONTRIBUTING.md) | Contribution guidelines |
 
 ---
 

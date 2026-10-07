@@ -1,27 +1,64 @@
-# TexasHoldemFrontend
+# TruHoldem Frontend
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 16.2.6.
+The frontend currently uses **Angular and Angular CLI 22.2.1**, **NgRx ComponentStore 22.0.1**, **Jest 30**, and **Cypress 15.15.1**. The application dependencies are defined in [package.json](package.json).
+
+The project was originally generated with Angular CLI 16.2.6; that is its scaffolding history, not its current framework version.
+
+## Setup
+
+Use Node.js `^22.22.3 || ^24.15.0 || >=26.0.0` and npm 10+ (the root manifest pins npm 10.9.0). Install from the repository root because the frontend is an npm workspace with a shared root lockfile:
+
+```bash
+npm ci
+```
+
+The commands below also run from the repository root.
 
 ## Development server
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+```bash
+npm run dev:frontend
+```
+
+Open `http://localhost:4200/`. The server reloads on source changes and uses `frontend/proxy.conf.js` to forward API requests to the backend. Start the backend separately with `npm run dev:backend`, or start both with `npm run dev`.
 
 ## Code scaffolding
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+```bash
+npm run ng --workspace=frontend -- generate component component-name
+```
 
-## Build
+## Production build
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+```bash
+npm run build:frontend
+```
 
-## Running unit tests
+Build artifacts are written to `frontend/dist/texas-holdem-frontend/`.
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+## Unit tests and coverage
 
-## Running end-to-end tests
+```bash
+npm run test:frontend
+```
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+This runs Jest in CI mode with coverage. Use `npm test --workspace=frontend` for a regular Jest run. Coverage gates and reports are configured in [jest.config.ts](jest.config.ts).
 
-## Further help
+## End-to-end tests
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+Start the backend and frontend before running Cypress:
+
+```bash
+# Interactive Cypress runner
+npm run e2e --workspace=frontend
+
+# Headless Chrome run
+npm run e2e:ci --workspace=frontend
+
+# Frontend unit tests followed by E2E tests
+npm run test:all --workspace=frontend
+```
+
+The default base URL is `http://localhost:4200`; set `CYPRESS_BASE_URL` to test another running frontend. Specs and support commands live under `cypress/`, with runner settings in [cypress.config.ts](cypress.config.ts).
+
+See the [main README](../README.md) for backend setup, the complete stack and CI test results.

@@ -29,12 +29,13 @@ TruHoldem is built as a **distributed, real-time system** designed for:
 
 | Decision | Rationale |
 |----------|-----------|
-| Spring Boot 3.5 + Java 21 | LTS version with virtual threads for I/O efficiency |
+| Spring Boot 4.1.1 + Java 21 | Java LTS with virtual threads for I/O efficiency |
+| Angular 22.2.1 | SPA framework with reactive components |
 | WebSocket (STOMP) | Real-time bidirectional communication for game state |
 | Redis for sessions | Enables horizontal scaling of WebSocket connections |
 | PostgreSQL | ACID compliance for game state integrity |
 | Domain-Driven Design | Complex poker domain requires explicit modeling |
-| NgRx ComponentStore | Lightweight reactive state management for Angular |
+| NgRx ComponentStore 22.0.1 | Lightweight reactive state management for Angular |
 
 ---
 

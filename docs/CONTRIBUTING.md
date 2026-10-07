@@ -32,7 +32,8 @@ This project adheres to a code of conduct. By participating, you are expected to
 Ensure you have installed:
 
 - Java 21 (Temurin/OpenJDK recommended)
-- Node.js 20+
+- Node.js `^22.22.3 || ^24.15.0 || >=26.0.0`
+- npm 10+ (root manifest: npm 10.9.0)
 - Docker & Docker Compose
 - Git
 
@@ -57,8 +58,8 @@ docker-compose up -d postgres redis
 cd backend
 ./mvnw clean install
 
-# Frontend setup
-cd ../frontend
+# Install frontend workspace dependencies from the repository root
+cd ..
 npm ci
 ```
 
@@ -321,17 +322,15 @@ describe('Game Flow', () => {
 
 | Type | Minimum Coverage |
 |------|-----------------|
-| Backend Unit Tests | 80% |
-| Frontend Unit Tests | 75% |
-| E2E Critical Paths | All user flows |
+| Backend (JaCoCo) | 60% instruction coverage |
+| Frontend (Jest) | 60% statements, lines and functions; 50% branches |
+| E2E (Cypress) | Configured specs must pass |
 
 Run coverage reports:
 ```bash
-# Backend
-./mvnw verify jacoco:report
-
-# Frontend
-npm run test:coverage
+# From the repository root
+(cd backend && ./mvnw verify)
+npm run test:coverage --workspace=frontend
 ```
 
 ---
