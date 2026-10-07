@@ -388,6 +388,7 @@ describe('TruHoldem Poker E2E Test Suite', () => {
 
     it('A11Y-02: should pass axe-core accessibility check on home page', () => {
       cy.visit('/');
+      cy.get('[data-cy=home-page]').should('be.visible');
       cy.injectAxe();
       cy.checkA11y('[data-cy=home-page]', {
         runOnly: {

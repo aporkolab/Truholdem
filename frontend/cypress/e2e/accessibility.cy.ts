@@ -34,7 +34,8 @@ describe('TruHoldem Accessibility (WCAG 2.1 AA)', () => {
 
   beforeEach(() => {
     cy.visit('/');
-    cy.injectAxe?.();
+    cy.get('[data-cy=home-page]').should('be.visible');
+    cy.injectAxe();
   });
 
   
@@ -43,10 +44,10 @@ describe('TruHoldem Accessibility (WCAG 2.1 AA)', () => {
   describe('Automated WCAG Compliance', () => {
     
     it('should have no accessibility violations on home page', () => {
-      cy.checkA11y?.(null, {
+      cy.checkA11y(null, {
         runOnly: {
           type: 'tag',
-          values: ['wcag2aa', 'wcag21aa']
+          values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
         }
       });
     });
@@ -54,10 +55,10 @@ describe('TruHoldem Accessibility (WCAG 2.1 AA)', () => {
     it('should have no accessibility violations on game table', () => {
       navigateToGameTable();
 
-      cy.checkA11y?.(null, {
+      cy.checkA11y(null, {
         runOnly: {
           type: 'tag',
-          values: ['wcag2aa', 'wcag21aa']
+          values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
         }
       }, (violations) => {
         violations.forEach((violation) => {
@@ -69,7 +70,7 @@ describe('TruHoldem Accessibility (WCAG 2.1 AA)', () => {
     it('should have no critical violations', () => {
       navigateToGameTable();
 
-      cy.checkA11y?.(null, {
+      cy.checkA11y(null, {
         rules: {
           'color-contrast': { enabled: true },
           'landmark-one-main': { enabled: true },
@@ -196,27 +197,3 @@ describe('TruHoldem Accessibility (WCAG 2.1 AA)', () => {
     });
   });
 });
-
-
-
-
-declare global {
-  namespace Cypress {
-    interface Chainable {
-      
-      injectAxe(): Chainable<void>;
-      
-      
-      checkA11y(
-        context?: string | Node | object | null,
-        options?: object,
-        violationCallback?: (violations: any[]) => void
-      ): Chainable<void>;
-      
-      
-      realPress(key: string): Chainable<void>;
-    }
-  }
-}
-
-export {};
