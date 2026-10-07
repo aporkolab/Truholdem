@@ -246,7 +246,7 @@ export class FocusService {
       const targetIndex = elements.indexOf(target);
       if (targetIndex === -1) return;
 
-      let newIndex = currentIndex;
+      let newIndex: number;
 
       switch (event.key) {
         case 'ArrowRight':

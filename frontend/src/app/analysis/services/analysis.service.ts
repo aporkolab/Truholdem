@@ -365,7 +365,7 @@ export class AnalysisService {
     const gap = highCard - lowCard;
     const isConnected = gap === 1;
 
-    let strength = 0;
+    let strength: number;
 
     
     if (isPair) {
