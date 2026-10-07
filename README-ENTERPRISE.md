@@ -85,12 +85,14 @@ A **production-ready, enterprise-grade Texas Hold'em poker application** built w
 
 ## 🏗️ Architecture Overview
 
+Current application stack: **Angular 22.2.1** and **Spring Boot 4.1.1** on **Java 21**. See the [main README](README.md#-tech-stack) for the complete manifest-aligned stack.
+
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │    Frontend     │    │     Backend      │    │    Database     │
 │   (Angular)     │◄──►│  (Spring Boot)   │◄──►│  (PostgreSQL)   │
 │                 │    │                  │    │                 │
-│  • Angular 17   │    │  • Spring Boot 3 │    │  • PostgreSQL   │
+│  • Angular      │    │  • Spring Boot   │    │  • PostgreSQL   │
 │  • TypeScript   │    │  • Spring Sec    │    │  • Liquibase    │
 │  • Bootstrap    │    │  • JWT Auth      │    │  • Connection   │
 │  • WebSocket    │    │  • Redis Cache   │    │    Pooling      │
@@ -110,7 +112,8 @@ A **production-ready, enterprise-grade Texas Hold'em poker application** built w
 
 ### Prerequisites
 - **Java 21+**
-- **Node.js 18+**
+- **Node.js** `^22.22.3 || ^24.15.0 || >=26.0.0`
+- **npm 10+** (root manifest: npm 10.9.0)
 - **Docker & Docker Compose**
 - **PostgreSQL 16+** (if running locally)
 - **Redis 7+** (if running locally)
@@ -154,13 +157,11 @@ cd backend
 
 #### Frontend Setup
 ```bash
-cd frontend
-
-# Install dependencies
-npm install
+# From the repository root, using the shared workspace lockfile
+npm ci
 
 # Start development server
-npm start
+npm run dev:frontend
 ```
 
 ## 🧪 Testing

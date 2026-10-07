@@ -23,7 +23,8 @@ Production deployment and operations guide for the TruHoldem poker platform.
 | Docker | 24+ | Containerization |
 | Docker Compose | 2.20+ | Multi-container orchestration |
 | Java | 21 | Backend runtime |
-| Node.js | 20+ | Frontend build |
+| Node.js | `^22.22.3` or `^24.15.0` or `>=26.0.0` | Frontend build |
+| npm | 10+ (manifest: 10.9.0) | Workspace dependency installation |
 | PostgreSQL | 16 | Primary database |
 | Redis | 7 | Caching & WebSocket pub/sub |
 
@@ -77,16 +78,14 @@ docker-compose up -d postgres redis
 ### Frontend
 
 ```bash
-cd frontend
-
-# Install dependencies
+# From the repository root, using the shared workspace lockfile
 npm ci
 
 # Development server with hot reload
-npm run dev
+npm run dev:frontend
 
 # Build for production
-npm run build
+npm run build:frontend
 ```
 
 ### Configuration Files
@@ -264,15 +263,19 @@ GitHub Actions workflow (`.github/workflows/ci-cd.yml`):
 
 ### Triggers
 
-- **Push to main/develop**: Full pipeline with Docker build
-- **Pull requests**: Tests only (no Docker build)
+- **Push to main**: Tests, security scanning, Docker build and image push
+- **Push to develop**: Tests and security scanning
+- **Pull requests to main/develop**: Tests, security scanning and Docker build validation without image pushes
+- **Version tags (`v*`)**: Build/push, production deployment and release jobs
 
 ### Test Environment
 
 The CI pipeline provisions:
 
 - PostgreSQL 16 service container
-- Node.js 20 for frontend builds
+- Node.js 24 for frontend builds
+- Ubuntu 26.04 runners
+- Redis 7 service container
 - Java 21 (Temurin) for backend
 - Cypress for E2E tests
 
