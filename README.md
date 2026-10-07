@@ -71,7 +71,7 @@
 | PostgreSQL | 16 | Primary database |
 | Redis | 7 | Caching & WebSocket sessions |
 | Liquibase | 5.x | Database migrations |
-| OpenTelemetry | 1.65.0 | Distributed tracing |
+| OpenTelemetry | 1.66.0 | Distributed tracing |
 | Micrometer | Prometheus | Metrics collection |
 
 ### Frontend
