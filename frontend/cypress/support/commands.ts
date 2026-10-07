@@ -27,8 +27,6 @@ declare global {
       clearAllStorage(): Chainable<void>;
       waitForNetworkIdle(timeout?: number): Chainable<void>;
       screenshotWithTimestamp(name: string): Chainable<void>;
-      injectAxe(): Chainable<void>;
-      checkA11y(context?: string, options?: object): Chainable<void>;
       tab(): Chainable<JQuery<HTMLElement>>;
     }
   }
@@ -324,19 +322,6 @@ Cypress.Commands.add('testKeyboardNav', (selectors: string[]) => {
     }
     cy.focused().should('match', selector);
   });
-});
-
-Cypress.Commands.add('injectAxe', () => {
-  
-  cy.window().then(win => {
-    if (!(win as any).axe) {
-      cy.log('axe-core not available, using stub');
-    }
-  });
-});
-
-Cypress.Commands.add('checkA11y', (context?: string, options?: object) => {
-  cy.log('Accessibility check', { context, options });
 });
 
 Cypress.Commands.add('tab', { prevSubject: 'optional' }, (subject) => {

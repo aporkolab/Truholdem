@@ -16,6 +16,7 @@
     "e2e": "cypress open",
     "e2e:headless": "cypress run",
     "e2e:ci": "cypress run --browser chrome --headless",
+    "e2e:a11y-regression": "node scripts/verify-a11y-failure.cjs",
     "start:e2e": "node scripts/start-e2e-server.js",
     "test:all": "npm run test:ci && npm run e2e:ci"
   },
@@ -48,7 +49,6 @@
     "angular-eslint": "22.5.0",
     "axe-core": "^4.11.0",
     "cypress": "^15.15.1",
-    "cypress-axe": "^1.7.0",
     "cypress-real-events": "^1.15.0",
     "eslint": "^10.11.0",
     "jasmine-core": "~7.0.2",

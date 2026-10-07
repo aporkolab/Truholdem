@@ -268,7 +268,19 @@ jobs:
             exit 1
           fi
 
+      - name: Typecheck Cypress Tests
+        id: cypress-types
+        run: npx tsc --noEmit -p frontend/cypress/tsconfig.json
+
+      - name: Verify Accessibility Checks Reject Violations
+        working-directory: ./frontend
+        run: npm run e2e:a11y-regression
+        env:
+          CYPRESS_BROWSER: chrome
+          CYPRESS_BASE_URL: http://localhost:${{ env.FRONTEND_PORT }}
+
       - name: Run Cypress E2E Tests
+        if: ${{ !cancelled() && steps.cypress-types.outcome == 'success' }}
         uses: cypress-io/github-action@v7
         with:
           working-directory: ./frontend

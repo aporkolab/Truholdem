@@ -1,4 +1,5 @@
 <div class="game-table" data-cy="poker-table">
+  <h1 class="visually-hidden">Poker table</h1>
 
 	
 	<div *ngIf="isLoading()" class="loading-overlay" data-cy="loading-overlay">
@@ -110,7 +111,8 @@
 			
 			<div *ngFor="let placeholder of placeholderCards(); trackBy: trackByCardIndex"
 				 class="card card-placeholder"
-				 data-cy="card-placeholder">
+				 data-cy="card-placeholder"
+				 role="listitem">
 				<div class="card-inner">
 					<div class="card-back">
 						<img [src]="getCardBackImage()" alt="Card Placeholder" class="card-image placeholder-image" />

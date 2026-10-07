@@ -1,4 +1,5 @@
 import { defineConfig } from 'cypress';
+import { readFileSync } from 'node:fs';
 
 export default defineConfig({
   e2e: {
@@ -15,7 +16,8 @@ export default defineConfig({
       openMode: 0
     },
     setupNodeEvents(on, config) {
-      
+      const axeSource = readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
+      on('task', { axeSource: () => axeSource });
     },
     specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',
     supportFile: 'cypress/support/e2e.ts'

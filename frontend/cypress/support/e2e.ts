@@ -4,6 +4,7 @@
 
 
 import './commands';
+import './accessibility';
 
 
 declare global {

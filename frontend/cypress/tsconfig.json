@@ -17,6 +17,7 @@
   },
   "include": [
     "e2e/**/*.ts",
+    "regression/**/*.ts",
     "support/**/*.ts"
   ],
   "exclude": [
