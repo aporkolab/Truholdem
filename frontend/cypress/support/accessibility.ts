@@ -1,8 +1,8 @@
-import axe, { type Result, type RunOptions, type ElementContext } from 'axe-core';
+import type { Result, RunOptions, ElementContext } from 'axe-core';
 
 declare global {
   interface Window {
-    axe?: typeof axe;
+    axe?: typeof import('axe-core');
   }
 
   namespace Cypress {
@@ -18,10 +18,12 @@ declare global {
 }
 
 Cypress.Commands.add('injectAxe', () => {
-  cy.window({ log: false }).then(win => {
-    // Evaluate the installed engine in the application window, not Cypress's runner.
-    win.eval(axe.source);
-    expect(win.axe?.run, 'axe-core is available in the application window').to.be.a('function');
+  // Read the browser bundle unchanged: Webpack rewrites axe.source's CommonJS closure.
+  cy.task<string>('axeSource', null, { log: false }).then(source => {
+    cy.window({ log: false }).then(win => {
+      win.eval(source);
+      expect(win.axe?.run, 'axe-core is available in the application window').to.be.a('function');
+    });
   });
 });
 
