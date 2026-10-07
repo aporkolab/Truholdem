@@ -4,8 +4,8 @@
 [![codecov](https://codecov.io/gh/APorkolab/TruHoldem/branch/main/graph/badge.svg)](https://codecov.io/gh/APorkolab/TruHoldem)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-green.svg)](https://spring.io/projects/spring-boot)
-[![Angular](https://img.shields.io/badge/Angular-20-red.svg)](https://angular.io/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.1-green.svg)](https://spring.io/projects/spring-boot)
+[![Angular](https://img.shields.io/badge/Angular-22.2.1-red.svg)](https://angular.io/)
 
 **A production-ready Texas Hold'em poker platform with advanced Bot AI, multi-table tournaments, real-time WebSocket gameplay, and comprehensive observability.**
 
@@ -64,25 +64,25 @@
 | Technology | Version | Purpose |
 |------------|---------|---------|
 | Java | 21 | Language (LTS with virtual threads) |
-| Spring Boot | 3.5 | Application framework |
-| Spring Security | 6.x | Authentication & authorization |
+| Spring Boot | 4.1.1 | Application framework |
+| Spring Security | 7.x | Authentication & authorization |
 | Spring WebSocket | STOMP | Real-time communication |
 | Spring Data JPA | Hibernate | Data persistence |
 | PostgreSQL | 16 | Primary database |
 | Redis | 7 | Caching & WebSocket sessions |
-| Liquibase | 4.x | Database migrations |
-| OpenTelemetry | 1.36 | Distributed tracing |
+| Liquibase | 5.x | Database migrations |
+| OpenTelemetry | 1.65.0 | Distributed tracing |
 | Micrometer | Prometheus | Metrics collection |
 
 ### Frontend
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| Angular | 20 | SPA framework |
-| NgRx ComponentStore | 20 | Reactive state management |
+| Angular | 22.2.1 | SPA framework |
+| NgRx ComponentStore | 22.0.1 | Reactive state management |
 | RxJS | 7.8 | Reactive programming |
 | Bootstrap | 5.3 | UI components |
 | Jest | 30 | Unit testing |
-| Cypress | 13 | E2E testing |
+| Cypress | 15.15.1 | E2E testing |
 | axe-core | 4.11 | Accessibility testing |
 
 ### DevOps
@@ -103,7 +103,7 @@
 ### Prerequisites
 - Docker & Docker Compose
 - Java 21+ (for local development)
-- Node.js 20-22 (for local development, Node.js 24+ may have webpack compatibility issues)
+- Node.js `^22.22.3 || ^24.15.0 || >=26.0.0` (for local development)
 - PostgreSQL 16 (or use Docker)
 - Redis 7 (optional, for WebSocket clustering)
 
