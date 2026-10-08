@@ -154,12 +154,11 @@ npm run dev:frontend
 ./scripts/dev-start.sh --frontend-only
 ```
 
-#### Clearing Cache (if webpack errors occur)
+#### Clearing the Angular build cache
 
 ```bash
 cd frontend
-rm -rf node_modules/.cache .angular
-npm cache clean --force
+npx ng cache clean
 npm run dev
 ```
 

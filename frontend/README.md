@@ -22,6 +22,10 @@ npm run dev:frontend
 
 Open `http://localhost:4200/`. The server reloads on source changes and uses `frontend/proxy.conf.js` to forward API requests to the backend. Start the backend separately with `npm run dev:backend`, or start both with `npm run dev`.
 
+Set `BACKEND_PORT` to explicitly select a backend port. Otherwise, the proxy reads the repository's `.backend-port` file and falls back to port 8080.
+
+Run `npm run test:dev-proxy --workspace=frontend` to smoke-test the development server and its HTTP and WebSocket proxy routes against an isolated backend. This check also runs in CI.
+
 ## Code scaffolding
 
 ```bash
@@ -34,7 +38,7 @@ npm run ng --workspace=frontend -- generate component component-name
 npm run build:frontend
 ```
 
-Build artifacts are written to `frontend/dist/texas-holdem-frontend/`.
+The `@angular/build:application` builder uses esbuild, with Vite serving local development builds. Build artifacts are written directly to `frontend/dist/texas-holdem-frontend/`, the path used by Docker and the E2E server.
 
 ## Unit tests and coverage
 
@@ -58,6 +62,8 @@ npm run e2e:ci --workspace=frontend
 # Frontend unit tests followed by E2E tests
 npm run test:all --workspace=frontend
 ```
+
+Cypress runs E2E tests; component and service unit tests use Jest.
 
 The default base URL is `http://localhost:4200`; set `CYPRESS_BASE_URL` to test another running frontend. Specs and support commands live under `cypress/`, with runner settings in [cypress.config.ts](cypress.config.ts).
 
