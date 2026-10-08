@@ -131,8 +131,14 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      - name: Audit npm Dependencies
+        run: npm audit --audit-level=high
+
       - name: Lint
         run: npm run lint:frontend
+
+      - name: Verify Development Proxy
+        run: npm run test:dev-proxy --workspace=frontend
 
       - name: Unit Tests with Coverage
         run: npm run test:frontend

@@ -11,6 +11,7 @@
     "test": "jest",
     "test:ci": "jest --ci --coverage",
     "test:coverage": "jest --coverage",
+    "test:dev-proxy": "node scripts/verify-dev-proxy.cjs",
     "lint": "ng lint",
     "lint:fix": "ng lint --fix",
     "e2e": "cypress open",
@@ -39,7 +40,7 @@
     "zone.js": "^0.16.3"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "22.2.1",
+    "@angular/build": "22.2.1",
     "@angular/cli": "22.2.1",
     "@angular/compiler-cli": "22.2.1",
     "@eslint/js": "^10.0.1",
