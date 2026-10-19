@@ -423,7 +423,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build & Push Backend
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./backend
           file: ./backend/Dockerfile
@@ -436,7 +436,7 @@ jobs:
             VERSION=${{ steps.version.outputs.version }}
 
       - name: Build & Push Frontend
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./frontend/Dockerfile
